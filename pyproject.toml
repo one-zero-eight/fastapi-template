@@ -2,12 +2,18 @@
 name = "fastapi-template"
 version = "0.1.0"
 description = ""
-authors = ["Ruslan Bel'kov <ruslan.belckov@yandex.ru>"]
+authors = ["one-zero-eight <https://t.me/one_zero_eight>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+fastapi = "^0.104.0"
+ruff = "^0.1.3"
+uvicorn = "^0.23.2"
 
+[tool.poetry.group.sqlalchemy.dependencies]
+sqlalchemy = "^2.0.22"
+alembic = "^1.12.1"
 
 [build-system]
 requires = ["poetry-core"]
