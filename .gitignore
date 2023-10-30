@@ -1,0 +1,6 @@
+### PyCharm ###
+.idea
+
+### Environment ###
+.env
+alembic.ini
