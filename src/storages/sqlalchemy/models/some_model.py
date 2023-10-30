@@ -1,4 +1,4 @@
-__all__ = ["SomeModelInSingle", "SomeModelInSingleXTag"]
+__all__ = ["SomeModel", "SomeModelInSingleXTag"]
 
 from typing import TYPE_CHECKING
 
@@ -20,12 +20,12 @@ if TYPE_CHECKING:
         pass
 
 
-class SomeModelInSingle(
+class SomeModel(
     Base,
     IdMixin,
 ):
     # - Meta
-    __tablename__ = "some_model_in_plural"
+    __tablename__ = "some_model"
     # - Fields
     alias: Mapped[str] = mapped_column(String(255), unique=True)
     # - - Relationships
@@ -33,16 +33,16 @@ class SomeModelInSingle(
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
-    user: Mapped["User"] = relationship("User", back_populates="some_model_in_single")
+    user: Mapped["User"] = relationship("User", back_populates="some_model")
     # many-to-many
     tags: Mapped[list["Tag"]] = relationship(
-        "Tag", secondary="some_model_in_single_x_tag"
+        "Tag", secondary="some_model_x_tag"
     )
 
 
 class SomeModelInSingleXTag(Base):
     # - Meta
-    __tablename__ = "some_model_in_single_x_tag"
+    __tablename__ = "some_model_x_tag"
     # - Fields
     some_model_in_single_id: Mapped[int] = mapped_column(
         ForeignKey("some_model_in_plural.id", ondelete="CASCADE"), primary_key=True
@@ -51,7 +51,7 @@ class SomeModelInSingleXTag(Base):
         ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True
     )
     # - - Relationships
-    some_model_in_single: Mapped[SomeModelInSingle] = relationship(
-        "SomeModelInSingle", back_populates="some_model_in_single_x_tags"
+    some_model_in_single: Mapped["SomeModel"] = relationship(
+        "SomeModel", back_populates="some_model_x_tag"
     )
-    tag: Mapped[Tag] = relationship("Tag", back_populates="some_model_in_single_x_tags")
+    tag: Mapped["Tag"] = relationship("Tag", back_populates="some_model_x_tag")

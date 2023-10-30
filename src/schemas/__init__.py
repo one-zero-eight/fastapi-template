@@ -1,12 +1,12 @@
 # fmt: off
 __all__ = [
-    "CreateSomeSchemeInSingle", "ViewSomeSchemeInSingle", "UpdateSomeSchemeInSingle",
+    "CreateSomeScheme", "ViewSomeScheme", "UpdateSomeScheme",
 ]
 
 # fmt: on
 
-from src.schemas.some_scheme_in_plural import (
-    CreateSomeSchemeInSingle,
-    ViewSomeSchemeInSingle,
-    UpdateSomeSchemeInSingle,
+from src.schemas.some_scheme import (
+    CreateSomeScheme,
+    ViewSomeScheme,
+    UpdateSomeScheme,
 )
