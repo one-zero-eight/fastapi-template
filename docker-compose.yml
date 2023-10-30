@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  api:
+    depends_on:
+      db:
+        condition: service_healthy
+    build:
+      dockerfile: ./deploy/Dockerfile
+      context: .
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file: .env
+
+  db:
+    image: "postgres:16.0"
+    restart: always
+    command: postgres -c synchronous_commit=off
+    volumes:
+      - "postgres:/var/lib/postgresql/data"
+    env_file: .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+    postgres:
