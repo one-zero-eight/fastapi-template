@@ -34,4 +34,5 @@ class AbstractSomeModuleRepository(metaclass=ABCMeta):
     @abstractmethod
     async def update(self, id_: int, data: "UpdateSomeScheme"):
         ...
+
     # ^^^^^^^^^^^^^^^^^ CRUD ^^^^^^^^^^^^^^^^^ #

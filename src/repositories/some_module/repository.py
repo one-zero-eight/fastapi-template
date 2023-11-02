@@ -1,9 +1,7 @@
 __all__ = ["SomeModuleRepository"]
 
-from typing import Optional
 
 from sqlalchemy import select, insert, or_, update
-from sqlalchemy.dialects.postgresql import insert as postgres_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.base import ExecutableOption
 
@@ -84,12 +82,7 @@ class SomeModuleRepository(AbstractSomeModuleRepository):
 
     async def update(self, id_: int, data: UpdateSomeScheme):
         async with self._create_session() as session:
-            q = (
-                update(SomeModel)
-                .where(SomeModel.id == id_)
-                .values(**data.model_dump())
-                .returning(SomeModel)
-            )
+            q = update(SomeModel).where(SomeModel.id == id_).values(**data.model_dump()).returning(SomeModel)
 
             if get_options:
                 q = q.options(*get_options)
