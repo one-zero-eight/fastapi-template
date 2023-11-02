@@ -4,3 +4,7 @@
 ### Environment ###
 .env
 alembic.ini
+
+### Sensible ###
+/private.pem
+/public.pem
