@@ -7,29 +7,24 @@
 repos:
   # Fix some errors with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.276
+    rev: v0.1.3
     hooks:
       - id: ruff
         args: [ --fix, --exit-zero ]
         name: "ruff: fixing"
-
-  # Reformat Python files with Black
-  - repo: https://github.com/psf/black
-    rev: 23.3.0
-    hooks:
-      - id: black
-        name: "black: formatting"
+      - id: ruff-format
+        name: "ruff: formatting"
 
   # Lint Python files with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.277
+    rev: v0.1.3
     hooks:
       - id: ruff
         name: "ruff: linting"
 
   # Check other files
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
       - id: check-added-large-files
