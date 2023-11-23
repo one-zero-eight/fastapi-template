@@ -1,9 +1,14 @@
 ### PyCharm ###
 .idea
 
+### Cache ###
+.ruff_cache
+
 ### Environment ###
 .env
+settings.yaml
 alembic.ini
+static
 
 ### Sensible ###
 /private.pem
