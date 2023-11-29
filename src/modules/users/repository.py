@@ -47,6 +47,21 @@ class UserRepository(SQLAlchemyRepository):
             await session.commit()
             return ViewUser.model_validate(new_user)
 
+    async def create_superuser(self, login: str, password: str) -> ViewUser:
+        async with self._create_session() as session:
+            user_dict = {
+                "id": await _get_available_user_ids(session),
+                "login": login,
+                "name": "Superuser",
+                "password_hash": Dependencies.get_auth_repository().get_password_hash(password),
+                "role": "admin",
+            }
+
+            q = insert(User).values(user_dict).returning(User)
+            new_user = await session.scalar(q)
+            await session.commit()
+            return ViewUser.model_validate(new_user)
+
     async def read(self, id_: int) -> Optional["ViewUser"]:
         async with self._create_session() as session:
             q = select(User).where(User.id == id_)
@@ -54,9 +69,9 @@ class UserRepository(SQLAlchemyRepository):
             if user:
                 return ViewUser.model_validate(user, from_attributes=True)
 
-    async def read_by_email(self, email: str) -> Optional["ViewUser"]:
+    async def read_by_login(self, login: str) -> Optional["ViewUser"]:
         async with self._create_session() as session:
-            q = select(User).where(User.email == email)
+            q = select(User).where(User.login == login)
             user = await session.scalar(q)
             if user:
                 return ViewUser.model_validate(user, from_attributes=True)

@@ -77,7 +77,7 @@ class AuthRepository(SQLAlchemyRepository):
 
     async def _get_user(self, login: str) -> Optional[UserCredentialsFromDB]:
         async with self._create_session() as session:
-            q = select(User.id, User.password_hash).where(User.email == login)
+            q = select(User.id, User.password_hash).where(User.login == login)
             user = await session.scalar(q)
             if user:
                 return UserCredentialsFromDB(

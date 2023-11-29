@@ -14,7 +14,7 @@ class ViewUser(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    email: str
+    login: str
     name: str
     password_hash: str = Field(exclude=True)
     role: UserRoles = UserRoles.DEFAULT
@@ -25,6 +25,6 @@ class ViewUser(BaseModel):
 
 
 class CreateUser(BaseModel):
-    email: str
+    login: str
     password: str
     name: str
