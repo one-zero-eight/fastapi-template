@@ -49,6 +49,10 @@ ignore = [
     "F403",
     "F405",
 ]
+# exclude alembic migrations
+exclude = [
+    "alembic/versions/*.py",
+]
 
 [build-system]
 requires = ["poetry-core"]
