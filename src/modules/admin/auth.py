@@ -58,4 +58,4 @@ class AdminAuth(AuthenticationBackend):
         return True
 
 
-authentication_backend = AdminAuth(secret_key=settings.SESSION_SECRET_KEY.get_secret_value())
+authentication_backend = AdminAuth(secret_key=settings.session_secret_key.get_secret_value())

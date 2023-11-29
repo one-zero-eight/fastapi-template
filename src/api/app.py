@@ -21,36 +21,36 @@ app = FastAPI(
     license_info=docs.LICENSE_INFO,
     openapi_tags=docs.TAGS_INFO,
     servers=[
-        {"url": settings.APP_ROOT_PATH, "description": "Current"},
+        {"url": settings.app_root_path, "description": "Current"},
     ],
-    root_path=settings.APP_ROOT_PATH,
+    root_path=settings.app_root_path,
     root_path_in_servers=False,
     swagger_ui_oauth2_redirect_url=None,
     generate_unique_id_function=generate_unique_operation_id,
 )
 
 # Static files
-if settings.STATIC_FILES is not None:
+if settings.static_files is not None:
     from starlette.staticfiles import StaticFiles
 
     app.mount(
-        settings.STATIC_FILES.MOUNT_PATH,
-        StaticFiles(directory=settings.STATIC_FILES.DIRECTORY),
-        name=settings.STATIC_FILES.MOUNT_NAME,
+        settings.static_files.mount_path,
+        StaticFiles(directory=settings.static_files.directory),
+        name=settings.static_files.mount_name,
     )
 
 # CORS settings
-if settings.CORS_ALLOW_ORIGINS:
+if settings.cors_allow_origins:
     app.add_middleware(
         middleware_class=CORSMiddleware,
-        allow_origins=settings.CORS_ALLOW_ORIGINS,
+        allow_origins=settings.cors_allow_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
 # Mock utilities
-if settings.ENVIRONMENT == Environment.DEVELOPMENT:
+if settings.environment == Environment.DEVELOPMENT:
     from fastapi_mock import MockUtilities
 
     MockUtilities(app, return_example_instead_of_500=True)
@@ -61,7 +61,7 @@ async def startup_event():
     await setup_repositories()
 
     # Admin panel
-    if settings.ADMIN_PANEL is not None:
+    if settings.admin_panel is not None:
         from src.api.startup import setup_admin_panel
 
         setup_admin_panel(app)

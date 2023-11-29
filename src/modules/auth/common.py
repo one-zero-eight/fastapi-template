@@ -10,13 +10,13 @@ from src.config import settings
 def redirect_with_token(return_to: str, token: str):
     response = RedirectResponse(return_to, status_code=302)
 
-    if settings.COOKIE:
+    if settings.cookie:
         response.set_cookie(
-            key=settings.COOKIE.NAME,
+            key=settings.cookie.name,
             value=token,
             httponly=True,
             secure=True,
-            domain=settings.COOKIE.DOMAIN,
+            domain=settings.cookie.domain,
             expires=datetime.now().astimezone(tz=timezone.utc) + timedelta(days=90),
         )
     return response
@@ -24,12 +24,12 @@ def redirect_with_token(return_to: str, token: str):
 
 def redirect_deleting_token(return_to: str):
     response = RedirectResponse(return_to, status_code=302)
-    if settings.COOKIE:
+    if settings.cookie:
         response.delete_cookie(
-            key=settings.COOKIE.NAME,
+            key=settings.cookie.name,
             httponly=True,
             secure=True,
-            domain=settings.COOKIE.DOMAIN,
+            domain=settings.cookie.domain,
         )
     return response
 
@@ -39,7 +39,7 @@ def ensure_allowed_return_to(return_to: str):
         url = URL(return_to)
         if url.hostname is None:
             return  # Ok. Allow returning to current domain
-        if settings.COOKIE and url.hostname in settings.COOKIE.ALLOWED_DOMAINS:
+        if settings.cookie and url.hostname in settings.cookie.allowed_domains:
             return  # Ok. Hostname is allowed (does not check port)
     except (AssertionError, ValueError):
         pass  # Bad. URL is malformed

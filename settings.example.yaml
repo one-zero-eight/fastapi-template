@@ -1,15 +1,15 @@
 $schema: "./settings.schema.yaml"
 # ---------- Application settings ----- #
-DATABASE:
-  URI: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
+database:
+  uri: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
 # Predefined
-PREDEFINED:
-  FIRST_SUPERUSER_LOGIN: admin
-  FIRST_SUPERUSER_PASSWORD: admin
+predefined:
+  first_superuser_login: admin
+  first_superuser_password: admin
 # Run 'openssl rand -hex 32' to generate key
-SESSION_SECRET_KEY: session_secret_key
+session_secret_key: session_secret_key
 # Run 'openssl genrsa -out private.pem 2048' to generate keys
-JWT_PRIVATE_KEY: |
+jwt_private_key: |
   -----BEGIN RSA PRIVATE KEY-----
   ssssssssssssssssssssssssssssss
   ssssssssssssssssssssssssssssss
@@ -17,7 +17,7 @@ JWT_PRIVATE_KEY: |
   ssssssssssssssssssssssssssssss
   -----END RSA PRIVATE KEY-----
 # For existing key run 'openssl rsa -in private.pem -pubout -out public.pem'
-JWT_PUBLIC_KEY: |
+jwt_public_key: |
   -----BEGIN PUBLIC KEY-----
   ssssssssssssssssssssssssssssss
   ssssssssssssssssssssssssssssss

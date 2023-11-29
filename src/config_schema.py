@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Union, Optional
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, field_validator, SecretStr
+from pydantic import BaseModel, Field, field_validator, SecretStr, ConfigDict
 from pydantic_core.core_schema import ValidationInfo
 from pydantic_settings import SettingsConfigDict
 from sqlalchemy import URL as DatabaseURI, make_url
@@ -17,9 +17,9 @@ class Environment(StrEnum):
 
 class Cookies(BaseModel):
     # Authentication
-    NAME: str = "token"
-    DOMAIN: str = "innohassle.ru"
-    ALLOWED_DOMAINS: list[str] = ["innohassle.ru", "api.innohassle.ru", "localhost"]
+    name: str = "token"
+    domain: str = "innohassle.ru"
+    allowed_domains: list[str] = ["innohassle.ru", "api.innohassle.ru", "localhost"]
 
 
 class AdminPanel(BaseModel):
@@ -27,9 +27,9 @@ class AdminPanel(BaseModel):
 
 
 class StaticFiles(BaseModel):
-    MOUNT_PATH: str = "/static"
-    MOUNT_NAME: str = "static"
-    DIRECTORY: Path = Path("static")
+    mount_path: str = "/static"
+    mount_name: str = "static"
+    directory: Path = Path("static")
 
 
 class Database(BaseModel):
@@ -37,17 +37,17 @@ class Database(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    URI: Union[Optional[DatabaseURI], Optional[str]] = Field(
-        ..., description="Database URI. If not set, will be generated from other settings"
+    uri: Union[Optional[DatabaseURI], Optional[str]] = Field(
+        None, description="Database URI. If not set, will be generated from other settings"
     )
 
-    USERNAME: Optional[str] = Field(None, description="Database username")
-    PASSWORD: Optional[str] = Field(None, description="Database password")
-    HOST: Optional[str] = Field(None, description="Database host")
-    PORT: Optional[int] = Field(None, description="Database port")
-    DATABASE_NAME: Optional[str] = Field(None, description="Database name")
+    username: Optional[str] = Field(None, description="Database username")
+    password: Optional[str] = Field(None, description="Database password")
+    host: Optional[str] = Field(None, description="Database host")
+    port: Optional[int] = Field(None, description="Database port")
+    database_name: Optional[str] = Field(None, description="Database name")
 
-    @field_validator("URI", mode="before")
+    @field_validator("uri", mode="before")
     @classmethod
     def resolve(cls, v: Optional[str], values: ValidationInfo) -> Optional[DatabaseURI]:
         if isinstance(v, str):
@@ -66,19 +66,19 @@ class Database(BaseModel):
     def get_async_engine(self):
         from sqlalchemy.ext.asyncio import create_async_engine
 
-        return create_async_engine(self.URI)
+        return create_async_engine(self.uri)
 
     def get_sync_engine(self):
         from sqlalchemy import create_engine
 
-        return create_engine(self.URI)
+        return create_engine(self.uri)
 
 
 class Predefined(BaseModel):
     """Predefined settings. Will be used in setup stage."""
 
-    FIRST_SUPERUSER_LOGIN: str = Field(default="admin", description="Login for the first superuser")
-    FIRST_SUPERUSER_PASSWORD: str = Field(default="admin", description="Password for the first superuser")
+    first_superuser_login: str = Field(default="admin", description="Login for the first superuser")
+    first_superuser_password: str = Field(default="admin", description="Password for the first superuser")
 
 
 class Settings(BaseModel):
@@ -88,33 +88,33 @@ class Settings(BaseModel):
 
     model_config = SettingsConfigDict()
 
-    ENVIRONMENT: Environment = Field(Environment.DEVELOPMENT, description="App environment flag")
+    environment: Environment = Field(Environment.DEVELOPMENT, description="App environment flag")
 
-    APP_ROOT_PATH: str = Field("", description='Prefix for the API path (e.g. "/api/v0")')
+    app_root_path: str = Field("", description='Prefix for the API path (e.g. "/api/v0")')
 
-    DATABASE: Database = Field(default_factory=Database, description="PostgreSQL database settings")
+    database: Database = Field(default_factory=Database, description="PostgreSQL database settings")
 
-    PREDEFINED: Predefined = Field(default_factory=Predefined, description="Predefined settings")
+    predefined: Predefined = Field(default_factory=Predefined, description="Predefined settings")
 
-    SESSION_SECRET_KEY: SecretStr = Field(
+    session_secret_key: SecretStr = Field(
         ..., description="Secret key for sessions middleware. Use 'openssl " "rand -hex 32' to generate keys"
     )
 
-    JWT_PRIVATE_KEY: SecretStr = Field(
+    jwt_private_key: SecretStr = Field(
         ...,
         description="Private key for JWT. Use 'openssl genrsa -out private.pem 2048' to generate keys",
     )
 
-    JWT_PUBLIC_KEY: str = Field(
+    jwt_public_key: str = Field(
         ...,
         description="Public key for JWT. Use 'openssl rsa -in private.pem -pubout -out public.pem' to generate keys",
     )
 
     # Static files
-    STATIC_FILES: StaticFiles = Field(default_factory=StaticFiles, description="Static files settings")
+    static_files: StaticFiles = Field(default_factory=StaticFiles, description="Static files settings")
 
     # Security
-    CORS_ALLOW_ORIGINS: list[str] = Field(
+    cors_allow_origins: list[str] = Field(
         default_factory=lambda: [
             "https://innohassle.ru",
             "http://localhost:3000",
@@ -123,10 +123,10 @@ class Settings(BaseModel):
     )
 
     # Admin panel
-    ADMIN_PANEL: Optional[AdminPanel] = Field(None, description="Admin panel settings. If not set, will be disabled")
+    admin_panel: Optional[AdminPanel] = Field(None, description="Admin panel settings. If not set, will be disabled")
 
     # Authentication
-    COOKIE: Optional[Cookies] = Field(default_factory=Cookies, description="Cookies settings")
+    cookie: Optional[Cookies] = Field(default_factory=Cookies, description="Cookies settings")
 
     @classmethod
     def from_yaml(cls, path: Path) -> "Settings":

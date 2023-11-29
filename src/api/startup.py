@@ -17,7 +17,7 @@ async def setup_repositories():
     from src.storages.sqlalchemy.storage import SQLAlchemyStorage
 
     # ------------------- Repositories Dependencies -------------------
-    storage = SQLAlchemyStorage(settings.DATABASE.get_async_engine())
+    storage = SQLAlchemyStorage(settings.database.get_async_engine())
     user_repository = UserRepository(storage)
     auth_repository = AuthRepository(storage)
 
@@ -25,7 +25,7 @@ async def setup_repositories():
     Dependencies.set_storage(storage)
     Dependencies.set_user_repository(user_repository)
 
-    if settings.ENVIRONMENT == Environment.DEVELOPMENT:
+    if settings.environment == Environment.DEVELOPMENT:
         import logging
 
         logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
@@ -35,13 +35,13 @@ async def setup_repositories():
 def setup_admin_panel(app: FastAPI):
     from src.modules.admin.app import init_app
 
-    init_app(app, settings.DATABASE.get_async_engine())
+    init_app(app, settings.database.get_async_engine())
 
 
 async def setup_predefined():
     user_repository = Dependencies.get_user_repository()
-    if not await user_repository.read_by_login(settings.PREDEFINED.FIRST_SUPERUSER_LOGIN):
+    if not await user_repository.read_by_login(settings.predefined.first_superuser_login):
         await user_repository.create_superuser(
-            login=settings.PREDEFINED.FIRST_SUPERUSER_LOGIN,
-            password=settings.PREDEFINED.FIRST_SUPERUSER_PASSWORD,
+            login=settings.predefined.first_superuser_login,
+            password=settings.predefined.first_superuser_password,
         )

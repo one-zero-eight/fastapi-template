@@ -21,7 +21,7 @@ class TokenRepository:
     @classmethod
     async def verify_access_token(cls, auth_token: str) -> VerificationResult:
         try:
-            payload = jwt.decode(auth_token, settings.JWT_PUBLIC_KEY)
+            payload = jwt.decode(auth_token, settings.jwt_public_key)
         except JoseError:
             return VerificationResult(success=False)
 
@@ -52,7 +52,7 @@ class TokenRepository:
         issued_at = datetime.utcnow()
         expire = issued_at + expires_delta
         payload.update({"exp": expire, "iat": issued_at})
-        encoded_jwt = jwt.encode({"alg": cls.ALGORITHM}, payload, settings.JWT_PRIVATE_KEY.get_secret_value())
+        encoded_jwt = jwt.encode({"alg": cls.ALGORITHM}, payload, settings.jwt_private_key.get_secret_value())
         return str(encoded_jwt, "utf-8")
 
 
