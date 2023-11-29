@@ -8,7 +8,8 @@ from src.api import docs
 from src.api.docs import generate_unique_operation_id
 from src.api.routers import routers
 from src.api.startup import setup_repositories
-from src.config import settings, Environment
+from src.config import settings
+from src.config_schema import Environment
 
 # App definition
 app = FastAPI(
@@ -61,9 +62,9 @@ async def startup_event():
 
     # Admin panel
     if settings.ADMIN_PANEL is not None:
-        from src.api.startup import setup_admin
+        from src.api.startup import setup_admin_panel
 
-        setup_admin(app)
+        setup_admin_panel(app)
 
 
 @app.on_event("shutdown")
