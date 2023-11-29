@@ -1,0 +1,180 @@
+$schema: http://json-schema.org/draft-07/schema#
+$defs:
+  AdminPanel:
+    properties: {}
+    title: AdminPanel
+    type: object
+  Cookies:
+    properties:
+      NAME:
+        default: token
+        title: Name
+        type: string
+      DOMAIN:
+        default: innohassle.ru
+        title: Domain
+        type: string
+      ALLOWED_DOMAINS:
+        default:
+        - innohassle.ru
+        - api.innohassle.ru
+        - localhost
+        items:
+          type: string
+        title: Allowed Domains
+        type: array
+    title: Cookies
+    type: object
+  Database:
+    description: PostgreSQL database settings.
+    properties:
+      URI:
+        anyOf:
+        - type: string
+        - type: 'null'
+        description: Database URI. If not set, will be generated from other settings
+        title: Uri
+      USERNAME:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: Database username
+        title: Username
+      PASSWORD:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: Database password
+        title: Password
+      HOST:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: Database host
+        title: Host
+      PORT:
+        anyOf:
+        - type: integer
+        - type: 'null'
+        default: null
+        description: Database port
+        title: Port
+      DATABASE_NAME:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: Database name
+        title: Database Name
+    required:
+    - URI
+    title: Database
+    type: object
+  Environment:
+    enum:
+    - development
+    - production
+    - testing
+    title: Environment
+    type: string
+  Predefined:
+    description: Predefined settings. Will be used in setup stage.
+    properties:
+      FIRST_SUPERUSER_LOGIN:
+        default: admin
+        description: Login for the first superuser
+        title: First Superuser Login
+        type: string
+      FIRST_SUPERUSER_PASSWORD:
+        default: admin
+        description: Password for the first superuser
+        title: First Superuser Password
+        type: string
+    title: Predefined
+    type: object
+  StaticFiles:
+    properties:
+      MOUNT_PATH:
+        default: /static
+        title: Mount Path
+        type: string
+      MOUNT_NAME:
+        default: static
+        title: Mount Name
+        type: string
+      DIRECTORY:
+        default: static
+        format: path
+        title: Directory
+        type: string
+    title: StaticFiles
+    type: object
+description: Settings for the application.
+properties:
+  ENVIRONMENT:
+    allOf:
+    - $ref: '#/$defs/Environment'
+    default: development
+    description: App environment flag
+  APP_ROOT_PATH:
+    default: ''
+    description: Prefix for the API path (e.g. "/api/v0")
+    title: App Root Path
+    type: string
+  DATABASE:
+    allOf:
+    - $ref: '#/$defs/Database'
+    description: PostgreSQL database settings
+  PREDEFINED:
+    allOf:
+    - $ref: '#/$defs/Predefined'
+    description: Predefined settings
+  SESSION_SECRET_KEY:
+    description: Secret key for sessions middleware. Use 'openssl rand -hex 32' to
+      generate keys
+    format: password
+    title: Session Secret Key
+    type: string
+    writeOnly: true
+  JWT_PRIVATE_KEY:
+    description: Private key for JWT. Use 'openssl genrsa -out private.pem 2048' to
+      generate keys
+    format: password
+    title: Jwt Private Key
+    type: string
+    writeOnly: true
+  JWT_PUBLIC_KEY:
+    description: Public key for JWT. Use 'openssl rsa -in private.pem -pubout -out
+      public.pem' to generate keys
+    title: Jwt Public Key
+    type: string
+  STATIC_FILES:
+    allOf:
+    - $ref: '#/$defs/StaticFiles'
+    description: Static files settings
+  CORS_ALLOW_ORIGINS:
+    description: CORS origins, used by FastAPI CORSMiddleware
+    items:
+      type: string
+    title: Cors Allow Origins
+    type: array
+  ADMIN_PANEL:
+    anyOf:
+    - $ref: '#/$defs/AdminPanel'
+    - type: 'null'
+    default: null
+    description: Admin panel settings. If not set, will be disabled
+  COOKIE:
+    anyOf:
+    - $ref: '#/$defs/Cookies'
+    - type: 'null'
+    description: Cookies settings
+required:
+- SESSION_SECRET_KEY
+- JWT_PRIVATE_KEY
+- JWT_PUBLIC_KEY
+title: Settings
+type: object

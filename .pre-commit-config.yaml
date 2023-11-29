@@ -29,3 +29,13 @@ repos:
       - id: trailing-whitespace
       - id: check-added-large-files
       - id: end-of-file-fixer
+
+  # Generate settings.schema.yaml
+  - repo: local
+    hooks:
+      - id: generate-settings-schema
+        name: generate settings.schema.yaml
+        language: system
+        entry: python -m src.config_schema
+        pass_filenames: false
+        files: ^src/config_schema.py$
