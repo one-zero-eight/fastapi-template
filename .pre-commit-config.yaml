@@ -45,3 +45,11 @@ repos:
         entry: python -m src.config_schema
         pass_filenames: false
         files: ^src/config_schema.py$
+      - id: alembic-auto-migrations
+        name: generate alembic auto migrations files
+        language: system
+        entry: python -c "print(__import__('sys').argv)"
+        pass_filenames: false
+        always_run: true
+        stages:
+          - commit-msg
