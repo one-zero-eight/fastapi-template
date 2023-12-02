@@ -50,6 +50,5 @@ repos:
         language: system
         entry: poetry run python ./scripts/alembic_auto_migrations.py
         files: storages/
-        verbose: true
         stages:
           - commit-msg
