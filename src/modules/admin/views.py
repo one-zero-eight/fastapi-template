@@ -23,7 +23,7 @@ class CustomUserModelView(ModelView):
 
 class UserView(CustomUserModelView, model=User):
     form_columns = [
-        "email",
+        "login",
         "password_hash",
     ]
     form_args = {"password_hash": {"label": "Пароль"}}

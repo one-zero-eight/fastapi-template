@@ -1,5 +1,6 @@
 __all__ = ["init_app"]
 
+import logging
 from typing import Optional, Union, Sequence
 
 from fastapi import FastAPI
@@ -65,3 +66,5 @@ def init_app(app: FastAPI, engine: Engine | AsyncEngine):
 
     for model in models:
         admin.add_view(model)
+
+    logging.info(r"Admin panel is configured at /admin")
