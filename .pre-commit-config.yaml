@@ -4,6 +4,12 @@
 # pre-commit install
 # pre-commit run --all-files
 
+default_stages:
+  - pre-commit
+  - pre-push
+  - commit-msg
+  - manual
+
 repos:
   # Fix some errors with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
