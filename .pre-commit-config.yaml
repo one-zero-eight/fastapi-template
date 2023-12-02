@@ -48,8 +48,11 @@ repos:
       - id: alembic-auto-migrations
         name: generate alembic auto migrations files
         language: system
-        entry: python -c "print(__import__('sys').argv)"
+        entry: poetry
+        args: ["run", "python", "scripts/alembic_auto_migrations.py"]
         pass_filenames: false
         always_run: true
+        verbose: true
         stages:
           - commit-msg
+          - manual
