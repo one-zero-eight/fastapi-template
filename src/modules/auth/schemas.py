@@ -2,7 +2,7 @@ __all__ = ["VerificationResult", "AuthResult", "AuthCredentials", "UserCredentia
 
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class VerificationResult(BaseModel):
@@ -16,8 +16,8 @@ class AuthResult(BaseModel):
 
 
 class AuthCredentials(BaseModel):
-    login: str
-    password: str
+    login: str = Field("admin", description="User login")
+    password: str = Field("admin", description="User password")
 
 
 class UserCredentialsFromDB(BaseModel):
