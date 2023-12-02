@@ -29,47 +29,11 @@ $defs:
     description: PostgreSQL database settings.
     properties:
       uri:
-        anyOf:
-        - type: string
-        - type: 'null'
-        default: null
         description: Database URI. If not set, will be generated from other settings
         title: Uri
-      username:
-        anyOf:
-        - type: string
-        - type: 'null'
-        default: null
-        description: Database username
-        title: Username
-      password:
-        anyOf:
-        - type: string
-        - type: 'null'
-        default: null
-        description: Database password
-        title: Password
-      host:
-        anyOf:
-        - type: string
-        - type: 'null'
-        default: null
-        description: Database host
-        title: Host
-      port:
-        anyOf:
-        - type: integer
-        - type: 'null'
-        default: null
-        description: Database port
-        title: Port
-      database_name:
-        anyOf:
-        - type: string
-        - type: 'null'
-        default: null
-        description: Database name
-        title: Database Name
+        type: string
+    required:
+    - uri
     title: Database
     type: object
   Environment:

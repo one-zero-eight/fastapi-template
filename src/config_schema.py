@@ -1,11 +1,9 @@
 from enum import StrEnum
 from pathlib import Path
-from typing import Union, Optional
+from typing import Optional
 
 import yaml
 from pydantic import BaseModel, Field, field_validator, SecretStr, ConfigDict
-from pydantic_core.core_schema import ValidationInfo
-from sqlalchemy import URL as DatabaseURI, make_url
 
 
 class Environment(StrEnum):
@@ -36,41 +34,19 @@ class Database(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    uri: Union[Optional[DatabaseURI], Optional[str]] = Field(
-        None, description="Database URI. If not set, will be generated from other settings"
-    )
-
-    username: Optional[str] = Field(None, description="Database username")
-    password: Optional[str] = Field(None, description="Database password")
-    host: Optional[str] = Field(None, description="Database host")
-    port: Optional[int] = Field(None, description="Database port")
-    database_name: Optional[str] = Field(None, description="Database name")
+    uri: str = Field(..., description="Database URI. If not set, will be generated from other settings")
 
     @field_validator("uri", mode="before")
     @classmethod
-    def resolve(cls, v: Optional[str], values: ValidationInfo) -> Optional[DatabaseURI]:
-        if isinstance(v, str):
-            return make_url(v)
-        elif isinstance(v, DatabaseURI):
-            return v
-        return DatabaseURI.create(
-            "postgresql",
-            username=values.data.get("USERNAME", "postgres"),
-            password=values.data.get("PASSWORD", "postgres"),
-            host=values.data.get("HOST", "localhost"),
-            port=values.data.get("PORT", 5432),
-            database=f"{values.data.get('DATABASE_NAME', 'postgres') or ''}",
-        )
+    def resolve(cls, v: Optional[str]) -> str:
+        from sqlalchemy.engine.url import make_url
+
+        return make_url(v).render_as_string(hide_password=False)
 
     def get_async_engine(self):
         from sqlalchemy.ext.asyncio import create_async_engine
 
         return create_async_engine(self.uri)
-
-    def get_sync_engine(self):
-        from sqlalchemy import create_engine
-
-        return create_engine(self.uri)
 
 
 class Predefined(BaseModel):
