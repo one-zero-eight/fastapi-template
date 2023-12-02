@@ -49,7 +49,7 @@ repos:
         name: generate alembic auto migrations files
         language: system
         entry: poetry run python ./scripts/alembic_auto_migrations.py
-        always_run: true
+        files: storages/
         verbose: true
         stages:
           - commit-msg
