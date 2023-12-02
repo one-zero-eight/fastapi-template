@@ -1,9 +1,5 @@
 $schema: http://json-schema.org/draft-07/schema#
 $defs:
-  AdminPanel:
-    properties: {}
-    title: AdminPanel
-    type: object
   Cookies:
     properties:
       name:
@@ -124,12 +120,6 @@ properties:
       type: string
     title: Cors Allow Origins
     type: array
-  admin_panel:
-    anyOf:
-    - $ref: '#/$defs/AdminPanel'
-    - type: 'null'
-    default: null
-    description: Admin panel settings. If not set, will be disabled
   cookie:
     anyOf:
     - $ref: '#/$defs/Cookies'

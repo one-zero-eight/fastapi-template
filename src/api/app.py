@@ -6,8 +6,8 @@ from starlette.responses import RedirectResponse
 
 from src.api import docs
 from src.api.docs import generate_unique_operation_id
+from src.api.lifespan import lifespan
 from src.api.routers import routers
-from src.api.startup import setup_repositories
 from src.config import settings
 from src.config_schema import Environment
 
@@ -27,6 +27,7 @@ app = FastAPI(
     root_path_in_servers=False,
     swagger_ui_oauth2_redirect_url=None,
     generate_unique_id_function=generate_unique_operation_id,
+    lifespan=lifespan,
 )
 
 # Static files
@@ -54,25 +55,6 @@ if settings.environment == Environment.DEVELOPMENT:
     from fastapi_mock import MockUtilities
 
     MockUtilities(app, return_example_instead_of_500=True)
-
-
-@app.on_event("startup")
-async def startup_event():
-    await setup_repositories()
-
-    # Admin panel
-    if settings.admin_panel is not None:
-        from src.api.startup import setup_admin_panel
-
-        setup_admin_panel(app)
-
-
-@app.on_event("shutdown")
-async def close_connection():
-    from src.api.dependencies import Dependencies
-
-    storage = Dependencies.get_storage()
-    await storage.close_connection()
 
 
 # Redirect root to docs

@@ -19,10 +19,6 @@ class Cookies(BaseModel):
     allowed_domains: list[str] = ["innohassle.ru", "api.innohassle.ru", "localhost"]
 
 
-class AdminPanel(BaseModel):
-    ...
-
-
 class StaticFiles(BaseModel):
     mount_path: str = "/static"
     mount_name: str = "static"
@@ -96,9 +92,6 @@ class Settings(BaseModel):
         ],
         description="CORS origins, used by FastAPI CORSMiddleware",
     )
-
-    # Admin panel
-    admin_panel: Optional[AdminPanel] = Field(None, description="Admin panel settings. If not set, will be disabled")
 
     # Authentication
     cookie: Optional[Cookies] = Field(default_factory=Cookies, description="Cookies settings")

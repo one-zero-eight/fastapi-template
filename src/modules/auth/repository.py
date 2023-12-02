@@ -57,7 +57,7 @@ class TokenRepository:
 
 
 class AuthRepository(SQLAlchemyRepository):
-    PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    PWD_CONTEXT = CryptContext(schemes=["bcrypt"])
 
     @classmethod
     def get_password_hash(cls, password: str) -> str:
@@ -78,7 +78,7 @@ class AuthRepository(SQLAlchemyRepository):
     async def _get_user(self, login: str) -> Optional[UserCredentialsFromDB]:
         async with self._create_session() as session:
             q = select(User.id, User.password_hash).where(User.login == login)
-            user = await session.scalar(q)
+            user = (await session.execute(q)).one_or_none()
             if user:
                 return UserCredentialsFromDB(
                     user_id=user.id,

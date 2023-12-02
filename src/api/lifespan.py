@@ -1,8 +1,6 @@
-__all__ = [
-    "setup_repositories",
-    "setup_admin_panel",
-    "setup_predefined",
-]
+__all__ = ["lifespan"]
+
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
@@ -10,12 +8,11 @@ from src.api.dependencies import Dependencies
 from src.config import settings
 from src.config_schema import Environment
 from src.modules.auth.repository import AuthRepository
+from src.modules.users.repository import UserRepository
+from src.storages.sqlalchemy.storage import SQLAlchemyStorage
 
 
 async def setup_repositories():
-    from src.modules.users.repository import UserRepository
-    from src.storages.sqlalchemy.storage import SQLAlchemyStorage
-
     # ------------------- Repositories Dependencies -------------------
     storage = SQLAlchemyStorage(settings.database.get_async_engine())
     user_repository = UserRepository(storage)
@@ -45,3 +42,21 @@ async def setup_predefined():
             login=settings.predefined.first_superuser_login,
             password=settings.predefined.first_superuser_password,
         )
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Application startup
+
+    await setup_repositories()
+    await setup_predefined()
+
+    setup_admin_panel(app)
+
+    yield
+
+    # Application shutdown
+    from src.api.dependencies import Dependencies
+
+    storage = Dependencies.get_storage()
+    await storage.close_connection()
