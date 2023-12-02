@@ -21,12 +21,15 @@ sqladmin = "^0.16.0"
 [tool.poetry.group.prod.dependencies]
 gunicorn = "21.2.0"
 
+[tool.poetry.group.dev]
+optional = true
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.1.6"
 pre-commit = "^3.5.0"
 fastapi-mock = "^0.3.0"
 
-
+[tool.poetry.group.ci]
+optional = true
 [tool.poetry.group.ci.dependencies]
 pydantic = "^2.5.2"
 pre-commit = "^3.5.0"
