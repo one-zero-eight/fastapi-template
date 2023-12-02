@@ -7,7 +7,6 @@
 ### Environment ###
 .env
 settings.yaml
-alembic.ini
 static
 
 ### Sensible ###
