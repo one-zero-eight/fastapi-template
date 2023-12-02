@@ -11,6 +11,7 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'poetry'
+      - run: pip install poetry
       - run: poetry install --only ci
       - uses: actions/cache@v3
         with:
