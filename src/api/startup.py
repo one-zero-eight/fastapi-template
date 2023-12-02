@@ -6,10 +6,10 @@ __all__ = [
 
 from fastapi import FastAPI
 
+from src.api.dependencies import Dependencies
 from src.config import settings
 from src.config_schema import Environment
 from src.modules.auth.repository import AuthRepository
-from src.api.dependencies import Dependencies
 
 
 async def setup_repositories():
