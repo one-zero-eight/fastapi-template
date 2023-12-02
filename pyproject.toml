@@ -8,7 +8,6 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 fastapi = { extras = ["all"], version = "^0.104.0" }
-pydantic-settings = "^2.0.3"
 pydantic = { version = "^2.4.2", extras = ["email"] }
 cryptography = "^41.0.5"
 authlib = "^1.2.1"

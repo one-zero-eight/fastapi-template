@@ -5,7 +5,6 @@ from typing import Union, Optional
 import yaml
 from pydantic import BaseModel, Field, field_validator, SecretStr, ConfigDict
 from pydantic_core.core_schema import ValidationInfo
-from pydantic_settings import SettingsConfigDict
 from sqlalchemy import URL as DatabaseURI, make_url
 
 
@@ -86,7 +85,7 @@ class Settings(BaseModel):
     Settings for the application.
     """
 
-    model_config = SettingsConfigDict()
+    model_config = ConfigDict()
 
     environment: Environment = Field(Environment.DEVELOPMENT, description="App environment flag")
 
