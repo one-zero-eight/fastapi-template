@@ -42,13 +42,14 @@ repos:
       - id: generate-settings-schema
         name: generate settings.schema.yaml
         language: system
-        entry: poetry run python -m src.config_schema
+        entry: poetry run python ./scripts/generate_settings_schema.py
         pass_filenames: false
         files: ^src/config_schema.py$
       - id: alembic-auto-migrations
         name: generate alembic auto migrations files
         language: system
         entry: poetry run python ./scripts/alembic_auto_migrations.py
+        pass_filenames: false
         files: storages/
         stages:
           - commit-msg

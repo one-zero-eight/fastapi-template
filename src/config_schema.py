@@ -140,7 +140,3 @@ class Settings(BaseModel):
         with open(path, "w", encoding="utf-8") as f:
             schema = {"$schema": "http://json-schema.org/draft-07/schema#", **cls.model_json_schema()}
             yaml.dump(schema, f, sort_keys=False)
-
-
-if __name__ == "__main__":
-    Settings.save_schema(Path(__file__).parents[1] / "settings.schema.yaml")
