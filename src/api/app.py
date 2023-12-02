@@ -1,6 +1,6 @@
 __all__ = ["app"]
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
 
@@ -77,8 +77,8 @@ async def close_connection():
 
 # Redirect root to docs
 @app.get("/", tags=["Root"], include_in_schema=False)
-async def redirect_to_docs():
-    return RedirectResponse(url="/docs")
+async def redirect_to_docs(request: Request):
+    return RedirectResponse(url=request.url_for("swagger_ui_html"))
 
 
 for router in routers:
