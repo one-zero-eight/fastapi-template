@@ -7,7 +7,7 @@ from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.dependencies import Dependencies
-from src.modules.users.schemas import ViewUser, CreateUser
+from src.modules.user.schemas import ViewUser, CreateUser
 from src.storages.sqlalchemy.models.users import User
 from src.storages.sqlalchemy.repository import SQLAlchemyRepository
 

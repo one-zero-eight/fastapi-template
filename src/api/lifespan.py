@@ -8,7 +8,7 @@ from src.api.dependencies import Dependencies
 from src.config import settings
 from src.config_schema import Environment
 from src.modules.auth.repository import AuthRepository
-from src.modules.users.repository import UserRepository
+from src.modules.user.repository import UserRepository
 from src.storages.sqlalchemy.storage import SQLAlchemyStorage
 
 

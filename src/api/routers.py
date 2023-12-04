@@ -1,6 +1,6 @@
 from src.config import settings
 from src.config_schema import Environment
-from src.modules.users.router import router as router_users
+from src.modules.user.router import router as router_users
 from src.modules.auth.router import router as router_auth
 
 routers = [router_users, router_auth]

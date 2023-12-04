@@ -10,8 +10,8 @@ from src.api.exceptions import (
     NoCredentialsException,
 )
 from src.modules.auth.schemas import VerificationResult
-from src.modules.users.repository import UserRepository
-from src.modules.users.schemas import ViewUser
+from src.modules.user.repository import UserRepository
+from src.modules.user.schemas import ViewUser
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

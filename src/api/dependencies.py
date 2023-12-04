@@ -1,3 +1,14 @@
+"""
+
+Live Template for dependencies:
+    enum(
+        "storage: Annotated[SQLAlchemyStorage, DEPENDS_STORAGE]",
+        "user_repository: Annotated[UserRepository, DEPENDS_USER_REPOSITORY]",
+        "auth_repository: Annotated[AuthRepository, DEPENDS_AUTH_REPOSITORY]",
+        "verification: Annotated[VerificationResult, DEPENDS_VERIFIED_REQUEST]",
+    )
+"""
+
 __all__ = [
     "DEPENDS",
     "DEPENDS_STORAGE",
@@ -12,7 +23,7 @@ from fastapi import Depends
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.modules.users.repository import UserRepository
+    from src.modules.user.repository import UserRepository
     from src.modules.auth.repository import AuthRepository
     from src.storages.sqlalchemy.storage import SQLAlchemyStorage
 
