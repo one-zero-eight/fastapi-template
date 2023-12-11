@@ -1,14 +1,14 @@
-__all__ = [
-    "Shared",
-    "DEPENDS_VERIFIED_REQUEST",
-    "DEPENDS_SESSION",
-]
+__all__ = ["Shared", "DEPENDS_VERIFIED_REQUEST", "DEPENDS_SESSION", "DEPENDS_ADMIN"]
 
 from fastapi import Depends
 
 from typing import TypeVar, ClassVar, Callable, Union, Hashable
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.api.exceptions import ForbiddenException
+from src.modules.auth.schemas import VerificationResult
+from src.modules.auth.dependencies import verify_request
 
 T = TypeVar("T")
 
@@ -60,8 +60,6 @@ class Shared:
             return provider
 
 
-from src.modules.auth.dependencies import verify_request  # noqa: E402
-
 DEPENDS_VERIFIED_REQUEST = Depends(verify_request)
 
 
@@ -71,3 +69,12 @@ async def get_session():
 
 
 DEPENDS_SESSION = Depends(get_session)
+
+
+async def ensure_admin(verification: VerificationResult = DEPENDS_VERIFIED_REQUEST):
+    if not verification.is_admin:
+        raise ForbiddenException()
+    return verification
+
+
+DEPENDS_ADMIN = Depends(ensure_admin)

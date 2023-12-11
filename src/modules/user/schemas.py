@@ -1,13 +1,8 @@
 __all__ = ["ViewUser", "CreateUser"]
 
-from enum import StrEnum
-
 from pydantic import BaseModel, ConfigDict, Field
 
-
-class UserRoles(StrEnum):
-    DEFAULT = "default"
-    ADMIN = "admin"
+from src.storages.sqlalchemy.models.users import UserRole
 
 
 class ViewUser(BaseModel):
@@ -17,11 +12,11 @@ class ViewUser(BaseModel):
     login: str
     name: str
     password_hash: str = Field(exclude=True)
-    role: UserRoles = UserRoles.DEFAULT
+    role: UserRole = UserRole.DEFAULT
 
     @property
     def is_admin(self) -> bool:
-        return self.role == UserRoles.ADMIN
+        return self.role == UserRole.ADMIN
 
 
 class CreateUser(BaseModel):

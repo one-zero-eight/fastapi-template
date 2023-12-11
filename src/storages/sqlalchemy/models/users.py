@@ -1,4 +1,4 @@
-__all__ = ["User"]
+__all__ = ["User", "UserRole"]
 
 from enum import StrEnum
 

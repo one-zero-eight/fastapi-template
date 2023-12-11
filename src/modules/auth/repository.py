@@ -35,10 +35,12 @@ class TokenRepository:
 
         converted_user_id = int(user_id)
 
-        if await user_repository.read(converted_user_id, session) is None:
+        user = await user_repository.read(converted_user_id, session)
+
+        if user is None:
             return VerificationResult(success=False)
 
-        return VerificationResult(success=True, user_id=converted_user_id)
+        return VerificationResult(success=True, user_id=converted_user_id, role=user.role)
 
     @classmethod
     def create_access_token(cls, user_id: int) -> str:

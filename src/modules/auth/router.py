@@ -1,6 +1,5 @@
 __all__ = ["router"]
 
-
 from fastapi import APIRouter
 
 from src.api.shared import Shared

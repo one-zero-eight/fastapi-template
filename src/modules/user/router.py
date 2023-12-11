@@ -14,7 +14,7 @@ from src.modules.auth.schemas import VerificationResult
 from src.modules.user.repository import UserRepository
 from src.modules.user.schemas import ViewUser
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(prefix="/users", tags=["Users"], dependencies=[DEPENDS_VERIFIED_REQUEST])
 
 
 @router.get(

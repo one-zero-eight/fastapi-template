@@ -7,7 +7,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.exceptions import NoCredentialsException, IncorrectCredentialsException
-from src.api.shared import Shared
 from src.modules.auth.repository import TokenRepository
 from src.modules.auth.schemas import VerificationResult
 
@@ -37,6 +36,8 @@ async def verify_request(
     :raises NoCredentialsException: if token is not provided
     :raises IncorrectCredentialsException: if token is invalid
     """
+    from src.api.shared import Shared
+
     if not bearer:
         raise NoCredentialsException()
 

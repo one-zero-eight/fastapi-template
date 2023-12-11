@@ -4,10 +4,13 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from src.storages.sqlalchemy.models.users import UserRole
+
 
 class VerificationResult(BaseModel):
     success: bool
     user_id: Optional[int] = None
+    role: Optional[UserRole] = None
 
 
 class AuthResult(BaseModel):
