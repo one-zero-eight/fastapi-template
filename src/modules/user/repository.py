@@ -10,7 +10,6 @@ from src.api.shared import Shared
 from src.modules.auth.repository import AuthRepository
 from src.modules.user.schemas import ViewUser, CreateUser
 from src.storages.sqlalchemy.models.users import User
-from src.storages.sqlalchemy.repository import SQLAlchemyRepository
 
 MIN_USER_ID = 100_000
 MAX_USER_ID = 999_999
@@ -28,53 +27,48 @@ async def _get_available_user_ids(session: AsyncSession, count: int = 1) -> list
     return list(available_ids) if count > 1 else available_ids.pop()
 
 
-class UserRepository(SQLAlchemyRepository):
-    async def get_all(self) -> list["ViewUser"]:
-        async with self._create_session() as session:
-            q = select(User)
-            users = await session.scalars(q)
-            if users:
-                return [ViewUser.model_validate(user, from_attributes=True) for user in users]
+class UserRepository:
+    async def get_all(self, session: AsyncSession) -> list["ViewUser"]:
+        q = select(User)
+        users = await session.scalars(q)
+        if users:
+            return [ViewUser.model_validate(user, from_attributes=True) for user in users]
 
     # ------------------ CRUD ------------------ #
 
-    async def create(self, user: CreateUser) -> ViewUser:
-        async with self._create_session() as session:
-            user_dict = user.model_dump(exclude={"password"})
-            user_dict["id"] = await _get_available_user_ids(session)
-            user_dict["password_hash"] = Shared.fetch(AuthRepository).get_password_hash(user.password)
-            q = insert(User).values(user_dict).returning(User)
-            new_user = await session.scalar(q)
-            await session.commit()
-            return ViewUser.model_validate(new_user)
+    async def create(self, user: CreateUser, session: AsyncSession) -> ViewUser:
+        user_dict = user.model_dump(exclude={"password"})
+        user_dict["id"] = await _get_available_user_ids(session)
+        user_dict["password_hash"] = Shared.f(AuthRepository).get_password_hash(user.password)
+        q = insert(User).values(user_dict).returning(User)
+        new_user = await session.scalar(q)
+        await session.commit()
+        return ViewUser.model_validate(new_user)
 
-    async def create_superuser(self, login: str, password: str) -> ViewUser:
-        async with self._create_session() as session:
-            user_dict = {
-                "id": await _get_available_user_ids(session),
-                "login": login,
-                "name": "Superuser",
-                "password_hash": Shared.fetch(AuthRepository).get_password_hash(password),
-                "role": "admin",
-            }
+    async def create_superuser(self, login: str, password: str, session: AsyncSession) -> ViewUser:
+        user_dict = {
+            "id": await _get_available_user_ids(session),
+            "login": login,
+            "name": "Superuser",
+            "password_hash": Shared.f(AuthRepository).get_password_hash(password),
+            "role": "admin",
+        }
 
-            q = insert(User).values(user_dict).returning(User)
-            new_user = await session.scalar(q)
-            await session.commit()
-            return ViewUser.model_validate(new_user)
+        q = insert(User).values(user_dict).returning(User)
+        new_user = await session.scalar(q)
+        await session.commit()
+        return ViewUser.model_validate(new_user)
 
-    async def read(self, id_: int) -> Optional["ViewUser"]:
-        async with self._create_session() as session:
-            q = select(User).where(User.id == id_)
-            user = await session.scalar(q)
-            if user:
-                return ViewUser.model_validate(user, from_attributes=True)
+    async def read(self, id_: int, session: AsyncSession) -> Optional["ViewUser"]:
+        q = select(User).where(User.id == id_)
+        user = await session.scalar(q)
+        if user:
+            return ViewUser.model_validate(user, from_attributes=True)
 
-    async def read_by_login(self, login: str) -> Optional["ViewUser"]:
-        async with self._create_session() as session:
-            q = select(User).where(User.login == login)
-            user = await session.scalar(q)
-            if user:
-                return ViewUser.model_validate(user, from_attributes=True)
+    async def read_by_login(self, login: str, session: AsyncSession) -> Optional["ViewUser"]:
+        q = select(User).where(User.login == login)
+        user = await session.scalar(q)
+        if user:
+            return ViewUser.model_validate(user, from_attributes=True)
 
     # ^^^^^^^^^^^^^^^^^^^ CRUD ^^^^^^^^^^^^^^^^^^^ #

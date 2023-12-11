@@ -16,8 +16,8 @@ from src.storages.sqlalchemy.storage import SQLAlchemyStorage
 async def setup_repositories():
     # ------------------- Repositories Dependencies -------------------
     storage = SQLAlchemyStorage(settings.database.get_async_engine())
-    user_repository = UserRepository(storage)
-    auth_repository = AuthRepository(storage)
+    user_repository = UserRepository()
+    auth_repository = AuthRepository()
 
     Shared.register_provider(AuthRepository, auth_repository)
     Shared.register_provider(SQLAlchemyStorage, storage)
@@ -38,12 +38,14 @@ def setup_admin_panel(app: FastAPI):
 
 
 async def setup_predefined():
-    user_repository = Shared.fetch(UserRepository)
-    if not await user_repository.read_by_login(settings.predefined.first_superuser_login):
-        await user_repository.create_superuser(
-            login=settings.predefined.first_superuser_login,
-            password=settings.predefined.first_superuser_password,
-        )
+    user_repository = Shared.f(UserRepository)
+    async with Shared.f(AsyncSession) as session:
+        if not await user_repository.read_by_login(settings.predefined.first_superuser_login, session):
+            await user_repository.create_superuser(
+                login=settings.predefined.first_superuser_login,
+                password=settings.predefined.first_superuser_password,
+                session=session,
+            )
 
 
 @asynccontextmanager
@@ -60,5 +62,5 @@ async def lifespan(app: FastAPI):
     # Application shutdown
     from src.api.shared import Shared
 
-    storage = Shared.fetch(SQLAlchemyStorage)
+    storage = Shared.f(SQLAlchemyStorage)
     await storage.close_connection()

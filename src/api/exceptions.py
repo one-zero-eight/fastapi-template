@@ -1,6 +1,7 @@
 __all__ = [
     "NoCredentialsException",
     "IncorrectCredentialsException",
+    "ForbiddenException",
     "InvalidRedirectUri",
     "ObjectNotFound",
 ]
@@ -55,6 +56,20 @@ class InvalidRedirectUri(HTTPException):
         )
 
     responses = {400: {"description": "Invalid redirect_uri URL"}}
+
+
+class ForbiddenException(HTTPException):
+    """
+    HTTP_403_FORBIDDEN
+    """
+
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=self.responses[403]["description"],
+        )
+
+    responses = {403: {"description": "Not enough permissions"}}
 
 
 class ObjectNotFound(HTTPException):

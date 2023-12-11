@@ -3,6 +3,7 @@ __all__ = ["router"]
 from typing import Annotated
 
 from fastapi import APIRouter
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.shared import DEPENDS_VERIFIED_REQUEST, Shared
 from src.api.exceptions import (
@@ -30,7 +31,8 @@ async def get_me(
     """
     Get user info
     """
-    user_repository = Shared.fetch(UserRepository)
-    user = await user_repository.read(verification.user_id)
+    user_repository = Shared.f(UserRepository)
+    async with Shared.f(AsyncSession) as session:
+        user = await user_repository.read(verification.user_id, session)
     user: ViewUser
     return user

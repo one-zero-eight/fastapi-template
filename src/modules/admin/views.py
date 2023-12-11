@@ -17,7 +17,7 @@ class CustomUserModelView(ModelView):
             return
 
         # hash password
-        hashed_password = Shared.fetch(AuthRepository).get_password_hash(password)
+        hashed_password = Shared.f(AuthRepository).get_password_hash(password)
 
         data["password_hash"] = hashed_password
 

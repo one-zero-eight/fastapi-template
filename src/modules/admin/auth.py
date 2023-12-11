@@ -1,6 +1,7 @@
 __all__ = ["authentication_backend"]
 
 from sqladmin.authentication import AuthenticationBackend
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
 from src.api.shared import Shared
@@ -19,7 +20,7 @@ class AdminAuth(AuthenticationBackend):
         if not login or not password:
             return False
 
-        auth_repository = Shared.fetch(AuthRepository)
+        auth_repository = Shared.f(AuthRepository)
         try:
             user_id = await auth_repository.authenticate_user(login=login, password=password)
         except IncorrectCredentialsException:
@@ -46,12 +47,13 @@ class AdminAuth(AuthenticationBackend):
         else:
             token = bearer.replace("Bearer ", "")
 
-        verification_result = await TokenRepository.verify_access_token(token)
+        async with Shared.f(AsyncSession) as session:
+            verification_result = await TokenRepository.verify_access_token(token, session)
 
-        if not verification_result:
-            return False
+            if not verification_result:
+                return False
 
-        user = await Shared.fetch(UserRepository).read(verification_result.user_id)
+            user = await Shared.f(UserRepository).read(verification_result.user_id, session)
 
         if not user or not user.is_admin:
             return False

@@ -6,19 +6,19 @@ from typing import Optional
 from authlib.jose import jwt, JoseError
 from passlib.context import CryptContext
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.exceptions import IncorrectCredentialsException
 from src.config import settings
 from src.modules.auth.schemas import VerificationResult, UserCredentialsFromDB
 from src.storages.sqlalchemy.models import User
-from src.storages.sqlalchemy.repository import SQLAlchemyRepository
 
 
 class TokenRepository:
     ALGORITHM = "RS256"
 
     @classmethod
-    async def verify_access_token(cls, auth_token: str) -> VerificationResult:
+    async def verify_access_token(cls, auth_token: str, session: AsyncSession) -> VerificationResult:
         from src.api.shared import Shared
         from src.modules.user.repository import UserRepository
 
@@ -27,7 +27,7 @@ class TokenRepository:
         except JoseError:
             return VerificationResult(success=False)
 
-        user_repository = Shared.fetch(UserRepository)
+        user_repository = Shared.f(UserRepository)
         user_id: str = payload.get("sub")
 
         if user_id is None or not user_id.isdigit():
@@ -35,7 +35,7 @@ class TokenRepository:
 
         converted_user_id = int(user_id)
 
-        if await user_repository.read(converted_user_id) is None:
+        if await user_repository.read(converted_user_id, session) is None:
             return VerificationResult(success=False)
 
         return VerificationResult(success=True, user_id=converted_user_id)
@@ -58,7 +58,7 @@ class TokenRepository:
         return str(encoded_jwt, "utf-8")
 
 
-class AuthRepository(SQLAlchemyRepository):
+class AuthRepository:
     PWD_CONTEXT = CryptContext(schemes=["bcrypt"])
 
     @classmethod
@@ -78,7 +78,9 @@ class AuthRepository(SQLAlchemyRepository):
         return self.PWD_CONTEXT.verify(plain_password, hashed_password)
 
     async def _get_user(self, login: str) -> Optional[UserCredentialsFromDB]:
-        async with self._create_session() as session:
+        from src.api.shared import Shared
+
+        async with Shared.f(AsyncSession) as session:
             q = select(User.id, User.password_hash).where(User.login == login)
             user = (await session.execute(q)).one_or_none()
             if user:
