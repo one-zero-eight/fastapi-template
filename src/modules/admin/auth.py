@@ -3,10 +3,11 @@ __all__ = ["authentication_backend"]
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 
-from src.api.dependencies import Dependencies
+from src.api.shared import Shared
 from src.api.exceptions import IncorrectCredentialsException
 from src.config import settings
-from src.modules.auth.repository import TokenRepository
+from src.modules.auth.repository import TokenRepository, AuthRepository
+from src.modules.user.repository import UserRepository
 
 
 class AdminAuth(AuthenticationBackend):
@@ -18,7 +19,7 @@ class AdminAuth(AuthenticationBackend):
         if not login or not password:
             return False
 
-        auth_repository = Dependencies.get_auth_repository()
+        auth_repository = Shared.fetch(AuthRepository)
         try:
             user_id = await auth_repository.authenticate_user(login=login, password=password)
         except IncorrectCredentialsException:
@@ -50,7 +51,7 @@ class AdminAuth(AuthenticationBackend):
         if not verification_result:
             return False
 
-        user = await Dependencies.get_user_repository().read(verification_result.user_id)
+        user = await Shared.fetch(UserRepository).read(verification_result.user_id)
 
         if not user or not user.is_admin:
             return False

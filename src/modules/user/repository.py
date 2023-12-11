@@ -6,7 +6,8 @@ from typing import Optional
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.dependencies import Dependencies
+from src.api.shared import Shared
+from src.modules.auth.repository import AuthRepository
 from src.modules.user.schemas import ViewUser, CreateUser
 from src.storages.sqlalchemy.models.users import User
 from src.storages.sqlalchemy.repository import SQLAlchemyRepository
@@ -41,7 +42,7 @@ class UserRepository(SQLAlchemyRepository):
         async with self._create_session() as session:
             user_dict = user.model_dump(exclude={"password"})
             user_dict["id"] = await _get_available_user_ids(session)
-            user_dict["password_hash"] = Dependencies.get_auth_repository().get_password_hash(user.password)
+            user_dict["password_hash"] = Shared.fetch(AuthRepository).get_password_hash(user.password)
             q = insert(User).values(user_dict).returning(User)
             new_user = await session.scalar(q)
             await session.commit()
@@ -53,7 +54,7 @@ class UserRepository(SQLAlchemyRepository):
                 "id": await _get_available_user_ids(session),
                 "login": login,
                 "name": "Superuser",
-                "password_hash": Dependencies.get_auth_repository().get_password_hash(password),
+                "password_hash": Shared.fetch(AuthRepository).get_password_hash(password),
                 "role": "admin",
             }
 

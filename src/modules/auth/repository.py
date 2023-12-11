@@ -7,7 +7,6 @@ from authlib.jose import jwt, JoseError
 from passlib.context import CryptContext
 from sqlalchemy import select
 
-from src.api.dependencies import Dependencies
 from src.api.exceptions import IncorrectCredentialsException
 from src.config import settings
 from src.modules.auth.schemas import VerificationResult, UserCredentialsFromDB
@@ -20,12 +19,15 @@ class TokenRepository:
 
     @classmethod
     async def verify_access_token(cls, auth_token: str) -> VerificationResult:
+        from src.api.shared import Shared
+        from src.modules.user.repository import UserRepository
+
         try:
             payload = jwt.decode(auth_token, settings.jwt_public_key)
         except JoseError:
             return VerificationResult(success=False)
 
-        user_repository = Dependencies.get_user_repository()
+        user_repository = Shared.fetch(UserRepository)
         user_id: str = payload.get("sub")
 
         if user_id is None or not user_id.isdigit():

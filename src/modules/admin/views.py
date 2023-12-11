@@ -3,7 +3,8 @@ __all__ = ["models"]
 from sqladmin import ModelView
 from starlette.requests import Request
 
-from src.api.dependencies import Dependencies
+from src.api.shared import Shared
+from src.modules.auth.repository import AuthRepository
 from src.storages.sqlalchemy.models import User
 
 
@@ -16,7 +17,7 @@ class CustomUserModelView(ModelView):
             return
 
         # hash password
-        hashed_password = Dependencies.get_auth_repository().get_password_hash(password)
+        hashed_password = Shared.fetch(AuthRepository).get_password_hash(password)
 
         data["password_hash"] = hashed_password
 
