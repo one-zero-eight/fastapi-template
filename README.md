@@ -2,7 +2,7 @@
 
 # How to run
 
-1. Install Poetry
+1. Install [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 2. Install dependencies
     ```bash
    poetry install --no-root --with dev
