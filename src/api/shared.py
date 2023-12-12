@@ -1,8 +1,8 @@
-__all__ = ["Shared", "DEPENDS_VERIFIED_REQUEST", "DEPENDS_SESSION", "DEPENDS_ADMIN"]
+__all__ = ["Shared", "VerifiedDep", "SessionDep", "EnsureAdminDep"]
 
 from fastapi import Depends
 
-from typing import TypeVar, ClassVar, Callable, Union, Hashable
+from typing import TypeVar, ClassVar, Callable, Union, Hashable, Annotated
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -60,7 +60,7 @@ class Shared:
             return provider
 
 
-DEPENDS_VERIFIED_REQUEST = Depends(verify_request)
+VerifiedDep = Annotated[VerificationResult, Depends(verify_request)]
 
 
 async def get_session():
@@ -68,13 +68,13 @@ async def get_session():
         yield session
 
 
-DEPENDS_SESSION = Depends(get_session)
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
-async def ensure_admin(verification: VerificationResult = DEPENDS_VERIFIED_REQUEST):
+async def ensure_admin(verification: VerifiedDep):
     if not verification.is_admin:
         raise ForbiddenException()
     return verification
 
 
-DEPENDS_ADMIN = Depends(ensure_admin)
+EnsureAdminDep = Annotated[VerificationResult, Depends(ensure_admin)]

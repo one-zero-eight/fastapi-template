@@ -2,9 +2,8 @@ __all__ = ["router"]
 
 from fastapi import APIRouter
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.shared import DEPENDS_SESSION, DEPENDS_ADMIN
+from src.api.shared import SessionDep, EnsureAdminDep
 from src.config import settings
 from src.config_schema import Environment
 
@@ -15,10 +14,7 @@ if settings.environment == Environment.PRODUCTION:
 
 
 @router.get("/drop-all-tables")
-async def drop_all_tables(
-    session: AsyncSession = DEPENDS_SESSION,
-    _ensure_admin=DEPENDS_ADMIN,
-):
+async def drop_all_tables(session: SessionDep, _ensure_admin: EnsureAdminDep):
     """
     DROP SCHEMA public CASCADE; CREATE SCHEMA public;
     """
