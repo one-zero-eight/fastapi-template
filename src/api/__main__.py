@@ -1,11 +1,20 @@
 import os
+import sys
 from pathlib import Path
 
 import uvicorn
 
 # Change dir to project root (three levels up from this file)
 os.chdir(Path(__file__).parents[2])
-# Set environment variable for uvicorn
-os.environ["UVICORN_APP"] = "src.api.app:app"
+# Get arguments from command
+args = sys.argv[1:]
 
-uvicorn.main()
+uvicorn.main.main(
+    [
+        "src.main:app",
+        "--use-colors",
+        "--proxy-headers",
+        "--forwarded-allow-ips=*",
+        *args,
+    ]
+)

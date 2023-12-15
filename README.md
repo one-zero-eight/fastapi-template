@@ -13,7 +13,7 @@
    ```
 4. Run app
    ```bash
-   poetry run python -m src.api --use-colors --proxy-headers --forwarded-allow-ips=*
+   poetry run python -m src.api
    ```
    Or
    ```bash
