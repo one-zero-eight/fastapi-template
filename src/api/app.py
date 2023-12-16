@@ -26,6 +26,7 @@ app = FastAPI(
     root_path=settings.app_root_path,
     root_path_in_servers=False,
     swagger_ui_oauth2_redirect_url=None,
+    swagger_ui_parameters={"tryItOutEnabled": True, "persistAuthorization": True, "filter": True},
     generate_unique_id_function=generate_unique_operation_id,
     lifespan=lifespan,
 )

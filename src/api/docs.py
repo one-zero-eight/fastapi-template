@@ -26,7 +26,7 @@ LICENSE_INFO = {
 TAGS_INFO = [
     {
         "name": "Users",
-        "description": "User data and linking users with event groups.",
+        "description": "User data.",
     },
 ]
 
