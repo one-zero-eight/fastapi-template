@@ -32,8 +32,6 @@ class Shared:
     def f(cls, key: type[T] | Hashable) -> T:
         """
         Get shared dependency by key (f - fetch)
-        :param key:
-        :return:
         """
         if key not in cls.providers:
             if isinstance(key, type):
