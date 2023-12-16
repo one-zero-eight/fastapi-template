@@ -11,7 +11,7 @@ args = sys.argv[1:]
 
 uvicorn.main.main(
     [
-        "src.main:app",
+        "src.api.app:app",
         "--use-colors",
         "--proxy-headers",
         "--forwarded-allow-ips=*",
