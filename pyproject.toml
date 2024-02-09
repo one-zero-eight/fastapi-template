@@ -9,7 +9,7 @@ readme = "README.md"
 python = "^3.11"
 fastapi = { extras = ["all"], version = "^0.104.0" }
 pydantic = { version = "^2.4.2", extras = ["email"] }
-cryptography = "^41.0.5"
+cryptography = "^42.0.2"
 authlib = "^1.2.1"
 sqlalchemy = "^2.0.22"
 alembic = "^1.12.1"
@@ -24,9 +24,9 @@ gunicorn = "21.2.0"
 [tool.poetry.group.dev]
 optional = true
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.1.6"
+ruff = "^0.2.1"
 pre-commit = "^3.5.0"
-fastapi-mock = "^0.3.0"
+fastapi-mock = "^0.3.3"
 
 [tool.poetry.group.ci]
 optional = true
