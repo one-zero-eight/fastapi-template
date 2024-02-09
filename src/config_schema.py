@@ -33,7 +33,6 @@ class Database(BaseModel):
     uri: str = Field(..., description="Database URI. If not set, will be generated from other settings")
 
     @field_validator("uri", mode="before")
-    @classmethod
     def resolve(cls, v: Optional[str]) -> str:
         from sqlalchemy.engine.url import make_url
 
@@ -82,7 +81,7 @@ class Settings(BaseModel):
     )
 
     # Static files
-    static_files: StaticFiles = Field(default_factory=StaticFiles, description="Static files settings")
+    static_files: Optional[StaticFiles] = Field(default=None, description="Static files settings")
 
     # Security
     cors_allow_origins: list[str] = Field(
