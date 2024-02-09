@@ -44,7 +44,7 @@ addopts = [
 
 [tool.ruff]
 line-length = 120
-ignore = [
+lint.ignore = [
     # wildcard imports are fine
     "F403",
     "F405",

@@ -20,8 +20,14 @@
    poetry run uvicorn src.api.app:app --use-colors --proxy-headers --forwarded-allow-ips=*
    ```
 
-# How to update dependencies
+# How to update
+
+## Project dependencies
 
 1. Run `poetry update` to update all dependencies
 2. Run `poetry show --outdated` to check for outdated dependencies
 3. Run `poetry add <package>@latest` to add a new dependency if needed
+
+## Pre-commit hooks
+
+1. Run `poetry run pre-commit autoupdate`
