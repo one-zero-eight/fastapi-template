@@ -7,9 +7,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = { extras = ["all"], version = "^0.104.0" }
+fastapi = { extras = ["all"], version = "^0.109.1" }
 pydantic = { version = "^2.4.2", extras = ["email"] }
-cryptography = "^42.0.2"
+cryptography = "^42.0.4"
 authlib = "^1.2.1"
 sqlalchemy = "^2.0.22"
 alembic = "^1.12.1"
