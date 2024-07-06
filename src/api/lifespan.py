@@ -31,12 +31,6 @@ async def setup_repositories():
         logging.info("SQLAlchemy logging is enabled!")
 
 
-def setup_admin_panel(app: FastAPI):
-    from src.modules.admin.app import init_app
-
-    init_app(app, settings.database.get_async_engine())
-
-
 async def setup_predefined():
     user_repository = Shared.f(UserRepository)
     async with Shared.f(AsyncSession) as session:
@@ -54,8 +48,6 @@ async def lifespan(app: FastAPI):
 
     await setup_repositories()
     await setup_predefined()
-
-    setup_admin_panel(app)
 
     yield
 

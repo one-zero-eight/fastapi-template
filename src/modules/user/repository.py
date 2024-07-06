@@ -27,6 +27,7 @@ async def _get_available_user_ids(session: AsyncSession, count: int = 1) -> list
     return list(available_ids) if count > 1 else available_ids.pop()
 
 
+# noinspection PyMethodMayBeStatic
 class UserRepository:
     async def get_all(self, session: AsyncSession) -> list["ViewUser"]:
         q = select(User)

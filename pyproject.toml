@@ -7,40 +7,30 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = { extras = ["all"], version = "^0.104.0" }
-pydantic = { version = "^2.4.2", extras = ["email"] }
-cryptography = "^42.0.2"
-authlib = "^1.2.1"
-sqlalchemy = "^2.0.22"
-alembic = "^1.12.1"
+fastapi = "^0.111.0"
+pydantic = "^2.8.2"
+cryptography = "^42.0.8"
+authlib = "^1.3.1"
+sqlalchemy = "^2.0.31"
+alembic = "^1.13.2"
 asyncpg = "^0.29.0"
 passlib = "^1.7.4"
-sqladmin = "^0.16.0"
-bcrypt = "^4.1.1"
+bcrypt = "^4.1.3"
 
 [tool.poetry.group.prod.dependencies]
-gunicorn = "21.2.0"
+gunicorn = "^22.0.0"
 
 [tool.poetry.group.dev]
 optional = true
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.2.1"
-pre-commit = "^3.5.0"
-fastapi-mock = "^0.3.3"
+ruff = "^0.5.1"
+pre-commit = "^3.7.1"
 
 [tool.poetry.group.ci]
 optional = true
 [tool.poetry.group.ci.dependencies]
-pydantic = "^2.5.2"
-pre-commit = "^3.5.0"
-
-[tool.pytest.ini_options]
-pythonpath = "."
-testpaths = "tests"
-addopts = [
-    "--strict-config",
-    "--strict-markers",
-]
+pydantic = "^2.8.2"
+pre-commit = "^3.7.1"
 
 [tool.ruff]
 line-length = 120
@@ -53,25 +43,3 @@ lint.ignore = [
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.coverage.run]
-omit = ["src/dev.py"]
-
-[tool.coverage.report]
-exclude_also = [
-    # Don't complain about missing debug-only code:
-    "def __repr__",
-    "if enabled:",
-    # Don't complain if tests don't hit defensive assertion code:
-    "raise AssertionError",
-    "raise NotImplementedError",
-    # Don't complain if non-runnable code isn't run:
-    "if 0:",
-    "if __name__ == .__main__.:",
-    # Don't complain about abstract methods, they aren't run:
-    "@(abc\\.)?abstractmethod",
-    # Don't complain about TYPE_CHECKING imports:
-    "if TYPE_CHECKING:",
-]
-
-ignore_errors = true

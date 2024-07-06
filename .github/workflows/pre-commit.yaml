@@ -10,25 +10,25 @@ jobs:
       #       Check-out repo and set-up python
       #----------------------------------------------
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       #----------------------------------------------
       #       Install Poetry if not cached
       #----------------------------------------------
       - name: Load cached Poetry installation
         id: cached-poetry
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.local  # the path depends on the OS
-          key: poetry-1.7.1  # increment to reset cache
+          key: poetry-1.8.3  # increment to reset cache
       - name: Install Poetry
         if: steps.cached-poetry.outputs.cache-hit != 'true'
         uses: snok/install-poetry@v1
         with:
-          version: '1.7.1'
+          version: '1.8.3'
           virtualenvs-create: true
           virtualenvs-in-project: true
       #----------------------------------------------
@@ -36,18 +36,18 @@ jobs:
       #----------------------------------------------
       - name: Load cached Poetry dependencies
         id: cached-poetry-dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
       - name: Install Poetry dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --only ci
+        run: poetry install --no-interaction --no-root --with dev
       #----------------------------------------------
       #        Run pre-commit with cache
       #----------------------------------------------
       - name: Load pre-commit caches
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}

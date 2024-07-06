@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.exceptions import ForbiddenException
 from src.modules.auth.schemas import VerificationResult
 from src.modules.auth.dependencies import verify_request
+from src.storages.sqlalchemy.models.users import UserRole
 
 T = TypeVar("T")
 
@@ -70,7 +71,7 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 async def ensure_admin(verification: VerifiedDep):
-    if not verification.is_admin:
+    if not verification.role == UserRole.ADMIN:
         raise ForbiddenException()
     return verification
 
