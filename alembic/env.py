@@ -1,3 +1,8 @@
+"""
+Based on `Async alembic configuration with ruff post-hook` gist:
+https://gist.github.com/dantetemplar/cbef8b9f1d9d6cde7547629d6d85fcd1
+"""
+
 import asyncio
 from logging.config import fileConfig
 
