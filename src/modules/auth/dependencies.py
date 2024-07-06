@@ -1,7 +1,5 @@
 __all__ = ["verify_request"]
 
-from typing import Optional
-
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,15 +17,15 @@ bearer_scheme = HTTPBearer(
 
 
 async def get_access_token(
-    bearer: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
-) -> Optional[str]:
+    bearer: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> str | None:
     # Prefer header to cookie
     if bearer:
         return bearer.credentials
 
 
 async def verify_request(
-    bearer: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    bearer: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> VerificationResult:
     """
     Check one of the following:

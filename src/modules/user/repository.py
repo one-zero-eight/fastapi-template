@@ -1,7 +1,6 @@
 __all__ = ["UserRepository"]
 
 import random
-from typing import Optional
 
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +28,7 @@ async def _get_available_user_ids(session: AsyncSession, count: int = 1) -> list
 
 # noinspection PyMethodMayBeStatic
 class UserRepository:
-    async def get_all(self, session: AsyncSession) -> list["ViewUser"]:
+    async def get_all(self, session: AsyncSession) -> list[ViewUser]:
         q = select(User)
         users = await session.scalars(q)
         if users:
@@ -60,13 +59,13 @@ class UserRepository:
         await session.commit()
         return ViewUser.model_validate(new_user)
 
-    async def read(self, id_: int, session: AsyncSession) -> Optional["ViewUser"]:
+    async def read(self, id_: int, session: AsyncSession) -> ViewUser | None:
         q = select(User).where(User.id == id_)
         user = await session.scalar(q)
         if user:
             return ViewUser.model_validate(user, from_attributes=True)
 
-    async def read_by_login(self, login: str, session: AsyncSession) -> Optional["ViewUser"]:
+    async def read_by_login(self, login: str, session: AsyncSession) -> ViewUser | None:
         q = select(User).where(User.login == login)
         user = await session.scalar(q)
         if user:

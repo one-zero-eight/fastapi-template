@@ -1,7 +1,6 @@
 __all__ = ["TokenRepository", "AuthRepository"]
 
 from datetime import timedelta, datetime, UTC
-from typing import Optional
 
 from authlib.jose import jwt, JoseError
 from passlib.context import CryptContext
@@ -79,7 +78,7 @@ class AuthRepository:
     async def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return self.PWD_CONTEXT.verify(plain_password, hashed_password)
 
-    async def _get_user(self, login: str) -> Optional[UserCredentialsFromDB]:
+    async def _get_user(self, login: str) -> UserCredentialsFromDB | None:
         from src.api.shared import Shared
 
         async with Shared.f(AsyncSession) as session:
