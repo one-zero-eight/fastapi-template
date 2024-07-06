@@ -111,8 +111,10 @@ properties:
     title: Jwt Public Key
     type: string
   static_files:
-    allOf:
+    anyOf:
     - $ref: '#/$defs/StaticFiles'
+    - type: 'null'
+    default: null
     description: Static files settings
   cors_allow_origins:
     description: CORS origins, used by FastAPI CORSMiddleware
