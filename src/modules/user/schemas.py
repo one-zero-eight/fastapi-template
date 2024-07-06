@@ -1,14 +1,13 @@
 __all__ = ["ViewUser", "CreateUser"]
 
-from pydantic import BaseModel, ConfigDict, Field
+from beanie import PydanticObjectId
+from pydantic import BaseModel, Field
 
-from src.storages.sqlalchemy.models.users import UserRole
+from src.storages.mongo.users import UserRole
 
 
 class ViewUser(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
+    id: PydanticObjectId
     login: str
     name: str
     password_hash: str = Field(exclude=True)

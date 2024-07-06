@@ -33,9 +33,7 @@ repos:
     rev: v4.6.0
     hooks:
       - id: trailing-whitespace
-        exclude: alembic/
       - id: end-of-file-fixer
-        exclude: alembic/
       - id: check-added-large-files
 
   # Generate settings.schema.yaml
@@ -47,11 +45,3 @@ repos:
         entry: poetry run python ./scripts/generate_settings_schema.py
         pass_filenames: false
         files: ^src/config_schema.py$
-      - id: alembic-auto-migrations
-        name: generate alembic auto migrations files
-        language: system
-        entry: poetry run python ./scripts/alembic_auto_migrations.py
-        pass_filenames: false
-        files: storages/
-        stages:
-          - commit-msg

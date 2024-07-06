@@ -1,41 +1,46 @@
-__all__ = ["TokenRepository", "AuthRepository"]
+__all__ = ["TokenRepository", "AuthRepository", "auth_repository"]
 
+import time
 from datetime import timedelta, datetime, UTC
-from typing import Optional
 
-from authlib.jose import jwt, JoseError
+from authlib.jose import jwt, JoseError, JWTClaims
+from beanie import PydanticObjectId
 from passlib.context import CryptContext
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.exceptions import IncorrectCredentialsException
 from src.config import settings
 from src.modules.auth.schemas import VerificationResult, UserCredentialsFromDB
-from src.storages.sqlalchemy.models import User
+from src.storages.mongo.users import User
 
 
 class TokenRepository:
     ALGORITHM = "RS256"
 
     @classmethod
-    async def verify_access_token(cls, auth_token: str, session: AsyncSession) -> VerificationResult:
-        from src.api.shared import Shared
-        from src.modules.user.repository import UserRepository
+    def decode_token(cls, token: str) -> JWTClaims:
+        now = time.time()
+        payload = jwt.decode(token, settings.jwt_public_key)
+        payload.validate_exp(now, leeway=0)
+        payload.validate_iat(now, leeway=0)
+        return payload
+
+    @classmethod
+    async def verify_access_token(cls, auth_token: str) -> VerificationResult:
+        from src.modules.user.repository import user_repository
 
         try:
-            payload = jwt.decode(auth_token, settings.jwt_public_key)
+            payload = cls.decode_token(auth_token)
         except JoseError:
             return VerificationResult(success=False)
 
-        user_repository = Shared.f(UserRepository)
-        user_id: str = payload.get("sub")
+        user_id: str | None = payload.get("sub")
 
-        if user_id is None or not user_id.isdigit():
+        if user_id is None or not PydanticObjectId.is_valid(user_id):
             return VerificationResult(success=False)
 
-        converted_user_id = int(user_id)
+        converted_user_id = PydanticObjectId(user_id)
 
-        user = await user_repository.read(converted_user_id, session)
+        user = await user_repository.read(converted_user_id)
 
         if user is None:
             return VerificationResult(success=False)
@@ -43,7 +48,7 @@ class TokenRepository:
         return VerificationResult(success=True, user_id=converted_user_id, role=user.role)
 
     @classmethod
-    def create_access_token(cls, user_id: int) -> str:
+    def create_access_token(cls, user_id: PydanticObjectId) -> str:
         access_token = TokenRepository._create_access_token(
             data={"sub": str(user_id)},
             expires_delta=timedelta(days=1),
@@ -67,7 +72,7 @@ class AuthRepository:
     def get_password_hash(cls, password: str) -> str:
         return cls.PWD_CONTEXT.hash(password)
 
-    async def authenticate_user(self, login: str, password: str) -> int:
+    async def authenticate_user(self, login: str, password: str) -> PydanticObjectId:
         user_credentials = await self._get_user(login)
         if user_credentials is None:
             raise IncorrectCredentialsException()
@@ -79,14 +84,10 @@ class AuthRepository:
     async def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return self.PWD_CONTEXT.verify(plain_password, hashed_password)
 
-    async def _get_user(self, login: str) -> Optional[UserCredentialsFromDB]:
-        from src.api.shared import Shared
+    async def _get_user(self, login: str) -> UserCredentialsFromDB | None:
+        user = await User.find_one({"login": login})
+        if user:
+            return UserCredentialsFromDB(user_id=user.id, password_hash=user.password_hash)
 
-        async with Shared.f(AsyncSession) as session:
-            q = select(User.id, User.password_hash).where(User.login == login)
-            user = (await session.execute(q)).one_or_none()
-            if user:
-                return UserCredentialsFromDB(
-                    user_id=user.id,
-                    password_hash=user.password_hash,
-                )
+
+auth_repository: AuthRepository = AuthRepository()

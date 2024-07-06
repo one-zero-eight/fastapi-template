@@ -28,9 +28,9 @@ class StaticFiles(SettingBaseModel):
 
 
 class Database(SettingBaseModel):
-    """PostgreSQL database settings."""
+    """MongoDB database settings."""
 
-    uri: SecretStr = Field(..., examples=["postgresql+asyncpg://postgres:postgres@localhost:5432/postgres"])
+    uri: SecretStr = Field(..., examples=["mongodb://username:password@localhost:27017/db?authSource=admin"])
 
 
 class Predefined(SettingBaseModel):
@@ -53,7 +53,7 @@ class Settings(SettingBaseModel):
     app_root_path: str = ""
     'Prefix for the API path (e.g. "/api/v0")'
     database: Database
-    "PostgreSQL database settings"
+    "MongoDB database settings"
     predefined: Predefined = Predefined()
     "Predefined settings"
     session_secret_key: SecretStr

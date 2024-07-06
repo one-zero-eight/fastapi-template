@@ -38,12 +38,12 @@ This is the FastAPI ASGI application.
    cp settings.example.yaml settings.yaml
    ```
    Edit `settings.yaml` according to your needs.
-6. Set up a [PostgreSQL](https://www.postgresql.org/) database instance.
+6. Set up a [MongoDB](https://www.mongodb.com/) database instance.
    <details>
     <summary>Using docker container</summary>
 
     - Set up database settings for [docker-compose](https://docs.docker.com/compose/) container
-      in `.env` file:х
+      in `.env` file:
       ```bash
       cp .example.env .env
       ```
@@ -53,18 +53,8 @@ This is the FastAPI ASGI application.
       ```
     - Make sure to set up the actual database connection in `settings.yaml`, for example:
       ```yaml
-      db_url: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
-      ```
-
-   </details>
-   <details>
-    <summary>Using pgAdmin</summary>
-
-    - Connect to the PostgreSQL server using pgAdmin
-    - Set up a new database in the server: `Edit > New Object > New database`
-    - Use the database name in `settings.yaml` file, for example `db_name`:
-      ```yaml
-      db_url: postgresql+asyncpg://postgres:your_password@localhost:5432/db_name
+      database:
+         uri: mongodb://mongoadmin:secret@localhost:27017/db?authSource=admin
       ```
    </details>
 
@@ -80,11 +70,7 @@ This is the FastAPI ASGI application.
 ### Run for development
 
 1. Run the database if you have not done it yet
-2. Upgrade the database schema using [alembic](https://alembic.sqlalchemy.org/en/latest/):
-   ```bash
-   poetry run alembic upgrade head
-   ```
-3. Run the ASGI server
+2. Run the ASGI server
    ```bash
    poetry run python -m src.api
    ```

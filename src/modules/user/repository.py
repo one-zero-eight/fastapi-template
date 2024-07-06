@@ -1,75 +1,55 @@
-__all__ = ["UserRepository"]
+__all__ = ["UserRepository", "user_repository"]
 
-import random
-from typing import Optional
+from beanie import PydanticObjectId
 
-from sqlalchemy import select, insert
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.api.shared import Shared
 from src.modules.auth.repository import AuthRepository
 from src.modules.user.schemas import ViewUser, CreateUser
-from src.storages.sqlalchemy.models.users import User
-
-MIN_USER_ID = 100_000
-MAX_USER_ID = 999_999
-
-
-async def _get_available_user_ids(session: AsyncSession, count: int = 1) -> list[int] | int:
-    q = select(User.id)
-    excluded_ids = set(await session.scalars(q))
-    excluded_ids: set[int]
-    available_ids = set()
-    while len(available_ids) < count:
-        chosen_id = random.randint(MIN_USER_ID, MAX_USER_ID)
-        if chosen_id not in excluded_ids:
-            available_ids.add(chosen_id)
-    return list(available_ids) if count > 1 else available_ids.pop()
+from src.storages.mongo.users import User
 
 
 # noinspection PyMethodMayBeStatic
 class UserRepository:
-    async def get_all(self, session: AsyncSession) -> list["ViewUser"]:
-        q = select(User)
-        users = await session.scalars(q)
-        if users:
-            return [ViewUser.model_validate(user, from_attributes=True) for user in users]
+    async def get_all(self) -> list[ViewUser]:
+        users = await User.find_all().to_list()
+        return [ViewUser.model_validate(user, from_attributes=True) for user in users]
 
     # ------------------ CRUD ------------------ #
 
-    async def create(self, user: CreateUser, session: AsyncSession) -> ViewUser:
+    async def create(self, user: CreateUser) -> ViewUser:
         user_dict = user.model_dump(exclude={"password"})
-        user_dict["id"] = await _get_available_user_ids(session)
-        user_dict["password_hash"] = Shared.f(AuthRepository).get_password_hash(user.password)
-        q = insert(User).values(user_dict).returning(User)
-        new_user = await session.scalar(q)
-        await session.commit()
-        return ViewUser.model_validate(new_user)
+        user_dict["password_hash"] = AuthRepository.get_password_hash(user.password)
 
-    async def create_superuser(self, login: str, password: str, session: AsyncSession) -> ViewUser:
+        if await User.find({"login": user.login}).exists():
+            raise ValueError("User with this login already exists")
+
+        new_user = await User.model_validate(user_dict).insert()
+        return ViewUser.model_validate(new_user, from_attributes=True)
+
+    async def create_superuser(self, login: str, password: str) -> ViewUser:
         user_dict = {
-            "id": await _get_available_user_ids(session),
             "login": login,
             "name": "Superuser",
-            "password_hash": Shared.f(AuthRepository).get_password_hash(password),
+            "password_hash": AuthRepository.get_password_hash(password),
             "role": "admin",
         }
 
-        q = insert(User).values(user_dict).returning(User)
-        new_user = await session.scalar(q)
-        await session.commit()
-        return ViewUser.model_validate(new_user)
+        if await User.find({"login": login}).exists():
+            raise ValueError("User with this login already exists")
 
-    async def read(self, id_: int, session: AsyncSession) -> Optional["ViewUser"]:
-        q = select(User).where(User.id == id_)
-        user = await session.scalar(q)
+        new_user = await User.model_validate(user_dict).insert()
+        return ViewUser.model_validate(new_user, from_attributes=True)
+
+    async def read(self, id_: PydanticObjectId) -> ViewUser | None:
+        user = await User.get(id_)
         if user:
             return ViewUser.model_validate(user, from_attributes=True)
 
-    async def read_by_login(self, login: str, session: AsyncSession) -> Optional["ViewUser"]:
-        q = select(User).where(User.login == login)
-        user = await session.scalar(q)
+    async def read_by_login(self, login: str) -> ViewUser | None:
+        user = await User.find_one({"login": login})
         if user:
             return ViewUser.model_validate(user, from_attributes=True)
 
     # ^^^^^^^^^^^^^^^^^^^ CRUD ^^^^^^^^^^^^^^^^^^^ #
+
+
+user_repository: UserRepository = UserRepository()

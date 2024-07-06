@@ -1,60 +1,58 @@
 __all__ = ["lifespan"]
 
+import asyncio
+import json
 from contextlib import asynccontextmanager
 
+from beanie import init_beanie
 from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import timeout
+from pymongo.errors import ConnectionFailure
 
-from src.api.shared import Shared
 from src.config import settings
-from src.config_schema import Environment
 from src.logging_ import logger
-from src.modules.auth.repository import AuthRepository
-from src.modules.user.repository import UserRepository
-from src.storages.sqlalchemy.storage import SQLAlchemyStorage
+from src.modules.user.repository import user_repository
+from src.storages.mongo import document_models
 
 
-async def setup_repositories():
-    # ------------------- Repositories Dependencies -------------------
-    async_engine = create_async_engine(settings.database.uri.get_secret_value())
-    storage = SQLAlchemyStorage(async_engine)
-    user_repository = UserRepository()
-    auth_repository = AuthRepository()
+async def setup_database() -> AsyncIOMotorClient:
+    motor_client: AsyncIOMotorClient = AsyncIOMotorClient(
+        settings.database.uri.get_secret_value(),
+        connectTimeoutMS=5000,
+        serverSelectionTimeoutMS=5000,
+        tz_aware=True,
+    )
+    motor_client.get_io_loop = asyncio.get_running_loop  # type: ignore[method-assign]
 
-    Shared.register_provider(AuthRepository, auth_repository)
-    Shared.register_provider(SQLAlchemyStorage, storage)
-    Shared.register_provider(UserRepository, user_repository)
-    Shared.register_provider(AsyncSession, lambda: storage.create_session())
+    # healthcheck mongo
+    try:
+        with timeout(2):
+            server_info = await motor_client.server_info()
+            server_info_pretty_text = json.dumps(server_info, indent=2, default=str)
+            logger.info(f"Connected to MongoDB: {server_info_pretty_text}")
+    except ConnectionFailure as e:
+        logger.critical("Could not connect to MongoDB: %s" % e)
+        raise e
 
-    if settings.environment == Environment.DEVELOPMENT:
-        import logging
-
-        logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
-        logger.info("SQLAlchemy logging is enabled!")
+    mongo_db = motor_client.get_database()
+    await init_beanie(database=mongo_db, document_models=document_models, recreate_views=True)
+    return motor_client
 
 
 async def setup_predefined():
-    user_repository = Shared.f(UserRepository)
-    async with Shared.f(AsyncSession) as session:
-        if not await user_repository.read_by_login(settings.predefined.first_superuser_login, session):
-            await user_repository.create_superuser(
-                login=settings.predefined.first_superuser_login,
-                password=settings.predefined.first_superuser_password,
-                session=session,
-            )
+    if not await user_repository.read_by_login(settings.predefined.first_superuser_login):
+        await user_repository.create_superuser(
+            login=settings.predefined.first_superuser_login, password=settings.predefined.first_superuser_password
+        )
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     # Application startup
-
-    await setup_repositories()
+    motor_client = await setup_database()
     await setup_predefined()
-
     yield
 
-    # Application shutdown
-    from src.api.shared import Shared
-
-    storage = Shared.f(SQLAlchemyStorage)
-    await storage.close_connection()
+    # -- Application shutdown --
+    motor_client.close()

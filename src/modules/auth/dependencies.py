@@ -4,7 +4,6 @@ from typing import Optional
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.exceptions import IncorrectCredentialsException
 from src.modules.auth.repository import TokenRepository
@@ -35,13 +34,11 @@ async def verify_request(
     - Bearer token from header with webapp data
     :raises IncorrectCredentialsException: if token is invalid
     """
-    from src.api.shared import Shared
 
     if not bearer:
         raise IncorrectCredentialsException(no_credentials=True)
 
-    async with Shared.f(AsyncSession) as session:
-        verification_result = await TokenRepository.verify_access_token(bearer.credentials, session)
+    verification_result = await TokenRepository.verify_access_token(bearer.credentials)
 
     if verification_result.success:
         return verification_result

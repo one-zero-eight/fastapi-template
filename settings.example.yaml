@@ -1,7 +1,7 @@
 $schema: "./settings.schema.yaml"
 # ---------- Application settings ----- #
 database:
-  uri: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
+  uri: mongodb://mongoadmin:secret@localhost:27017/db?authSource=admin
 # Predefined
 predefined:
   first_superuser_login: admin

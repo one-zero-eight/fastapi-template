@@ -24,11 +24,11 @@ $defs:
     type: object
   Database:
     additionalProperties: false
-    description: PostgreSQL database settings.
+    description: MongoDB database settings.
     properties:
       uri:
         examples:
-        - postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
+        - mongodb://username:password@localhost:27017/db?authSource=admin
         format: password
         title: Uri
         type: string
@@ -97,7 +97,7 @@ properties:
   database:
     allOf:
     - $ref: '#/$defs/Database'
-    description: PostgreSQL database settings
+    description: MongoDB database settings
   predefined:
     allOf:
     - $ref: '#/$defs/Predefined'
