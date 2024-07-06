@@ -1,6 +1,7 @@
 $schema: http://json-schema.org/draft-07/schema#
 $defs:
   Cookies:
+    additionalProperties: false
     properties:
       name:
         default: token
@@ -22,12 +23,16 @@ $defs:
     title: Cookies
     type: object
   Database:
+    additionalProperties: false
     description: PostgreSQL database settings.
     properties:
       uri:
-        description: Database URI. If not set, will be generated from other settings
+        examples:
+        - postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
+        format: password
         title: Uri
         type: string
+        writeOnly: true
     required:
     - uri
     title: Database
@@ -36,10 +41,10 @@ $defs:
     enum:
     - development
     - production
-    - testing
     title: Environment
     type: string
   Predefined:
+    additionalProperties: false
     description: Predefined settings. Will be used in setup stage.
     properties:
       first_superuser_login:
@@ -55,6 +60,7 @@ $defs:
     title: Predefined
     type: object
   StaticFiles:
+    additionalProperties: false
     properties:
       mount_path:
         default: /static
@@ -71,8 +77,13 @@ $defs:
         type: string
     title: StaticFiles
     type: object
+additionalProperties: false
 description: Settings for the application.
 properties:
+  $schema:
+    default: null
+    title: $Schema
+    type: string
   environment:
     allOf:
     - $ref: '#/$defs/Environment'
@@ -90,6 +101,9 @@ properties:
   predefined:
     allOf:
     - $ref: '#/$defs/Predefined'
+    default:
+      first_superuser_login: admin
+      first_superuser_password: admin
     description: Predefined settings
   session_secret_key:
     description: Secret key for sessions middleware. Use 'openssl rand -hex 32' to
@@ -117,6 +131,9 @@ properties:
     default: null
     description: Static files settings
   cors_allow_origins:
+    default:
+    - https://innohassle.ru
+    - http://localhost:3000
     description: CORS origins, used by FastAPI CORSMiddleware
     items:
       type: string
@@ -126,8 +143,16 @@ properties:
     anyOf:
     - $ref: '#/$defs/Cookies'
     - type: 'null'
+    default:
+      name: token
+      domain: innohassle.ru
+      allowed_domains:
+      - innohassle.ru
+      - api.innohassle.ru
+      - localhost
     description: Cookies settings
 required:
+- database
 - session_secret_key
 - jwt_private_key
 - jwt_public_key

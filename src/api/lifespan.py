@@ -3,7 +3,7 @@ __all__ = ["lifespan"]
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from src.api.shared import Shared
 from src.config import settings
@@ -16,7 +16,8 @@ from src.storages.sqlalchemy.storage import SQLAlchemyStorage
 
 async def setup_repositories():
     # ------------------- Repositories Dependencies -------------------
-    storage = SQLAlchemyStorage(settings.database.get_async_engine())
+    async_engine = create_async_engine(settings.database.uri.get_secret_value())
+    storage = SQLAlchemyStorage(async_engine)
     user_repository = UserRepository()
     auth_repository = AuthRepository()
 
