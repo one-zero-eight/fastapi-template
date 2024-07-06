@@ -1,7 +1,6 @@
-__all__ = ["logger", "socket_logger", "suspend_logging"]
+__all__ = ["logger"]
 
 import asyncio
-import contextlib
 import inspect
 import logging.config
 import os
@@ -25,28 +24,6 @@ with open("logging.yaml", "r") as f:
 
 logger = logging.getLogger("src")
 logger.addFilter(RelativePathFilter())
-
-
-class NoPingPongFilter(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:
-        return not ("Received packet PONG" in record.getMessage() or "Sending packet PING" in record.getMessage())
-
-
-class NoTooLongInfoFilter(logging.Filter):
-    def __init__(self, max_length: int):
-        super().__init__()
-        self.max_length = max_length
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        if record.levelno == logging.INFO and len(record.getMessage()) >= self.max_length:
-            record.msg = record.getMessage()[: self.max_length - 3] + "..."
-            record.args = None  # all args are included in the message already
-        return True
-
-
-socket_logger = logging.getLogger("socketio")
-socket_logger.addFilter(NoPingPongFilter())
-socket_logger.addFilter(NoTooLongInfoFilter(1000))
 
 
 async def run_endpoint_function(*, dependant: Dependant, values: Dict[str, Any], is_coroutine: bool) -> Any:
@@ -82,10 +59,3 @@ async def run_endpoint_function(*, dependant: Dependant, values: Dict[str, Any],
 
 # monkey patch fastapi to log endpoint function duration and link to source code
 fastapi.routing.run_endpoint_function = run_endpoint_function
-
-
-@contextlib.contextmanager
-def suspend_logging():
-    logging.disable(logging.CRITICAL)
-    yield
-    logging.disable(logging.NOTSET)
