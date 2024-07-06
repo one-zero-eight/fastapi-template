@@ -45,7 +45,7 @@ This is the FastAPI ASGI application.
     - Set up database settings for [docker-compose](https://docs.docker.com/compose/) container
       in `.env` file:х
       ```bash
-      cp .env.example .env
+      cp .example.env .env
       ```
     - Run the database instance:
       ```bash
@@ -99,7 +99,7 @@ Now the API is running on http://localhost:8000. Good job!
 
 We use Docker with Docker Compose plugin to run the website on servers.
 
-1. Copy the file with environment variables: `cp .env.example .env`
+1. Copy the file with environment variables: `cp .example.env .env`
 2. Change environment variables in the `.env` file
 3. Copy the file with settings: `cp settings.example.yaml settings.yaml`
 4. Change settings in the `settings.yaml` file according to your needs
