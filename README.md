@@ -97,7 +97,7 @@ Now the API is running on http://localhost:8000. Good job!
 
 ### Deployment
 
-We use Docker with Docker Compose plugin to run the website on servers.
+We use Docker with Docker Compose plugin to run the service on servers.
 
 1. Copy the file with environment variables: `cp .example.env .env`
 2. Change environment variables in the `.env` file
