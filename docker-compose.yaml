@@ -14,17 +14,21 @@ services:
     env_file: .env
 
   db:
+    # See more: https://hub.docker.com/_/postgres
     image: "postgres:16.0"
     restart: always
+    # The commits were slow on our servers, so we turned off the synchronous_commit
     command: postgres -c synchronous_commit=off
     volumes:
       - "postgres:/var/lib/postgresql/data"
-    env_file: .env
+    ports:
+      - "5432:5432"
+    env_file: .env # Set POSTGRES_PASSWORD in .env file
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
 volumes:
-    postgres:
+  postgres:
