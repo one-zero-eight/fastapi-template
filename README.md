@@ -13,7 +13,8 @@ This is the FastAPI ASGI application.
 
 - [Python 3.11](https://www.python.org/downloads/release/python-3117/) & [Poetry](https://python-poetry.org/docs/)
 - [FastAPI](https://fastapi.tiangolo.com/) & [Pydantic](https://docs.pydantic.dev/latest/)
-- Database and ORM: [MongoDB](https://www.mongodb.com/), [Beanie](https://beanie-odm.dev/)
+- Database and ORM: [PostgreSQL](https://www.postgresql.org/), [SQLAlchemy](https://www.sqlalchemy.org/),
+  [Alembic](https://alembic.sqlalchemy.org/en/latest/)
 - Formatting and linting: [Ruff](https://docs.astral.sh/ruff/), [pre-commit](https://pre-commit.com/)
 - Deployment: [Docker](https://www.docker.com/), [Docker Compose](https://docs.docker.com/compose/),
   [GitHub Actions](https://github.com/features/actions)
@@ -53,7 +54,8 @@ This is the FastAPI ASGI application.
       ```
     - Make sure to set up the actual database connection in `settings.yaml`, for example:
       ```yaml
-      db_url: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
+      database:
+        uri: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
       ```
 
    </details>
@@ -64,7 +66,8 @@ This is the FastAPI ASGI application.
     - Set up a new database in the server: `Edit > New Object > New database`
     - Use the database name in `settings.yaml` file, for example `db_name`:
       ```yaml
-      db_url: postgresql+asyncpg://postgres:your_password@localhost:5432/db_name
+      database:
+        uri: postgresql+asyncpg://postgres:your_password@localhost:5432/db_name
       ```
    </details>
 
