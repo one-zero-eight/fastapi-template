@@ -6,7 +6,7 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.exceptions import NoCredentialsException, IncorrectCredentialsException
+from src.api.exceptions import IncorrectCredentialsException
 from src.modules.auth.repository import TokenRepository
 from src.modules.auth.schemas import VerificationResult
 
@@ -33,13 +33,12 @@ async def verify_request(
     Check one of the following:
     - Bearer token from header with BOT_TOKEN
     - Bearer token from header with webapp data
-    :raises NoCredentialsException: if token is not provided
     :raises IncorrectCredentialsException: if token is invalid
     """
     from src.api.shared import Shared
 
     if not bearer:
-        raise NoCredentialsException()
+        raise IncorrectCredentialsException(no_credentials=True)
 
     async with Shared.f(AsyncSession) as session:
         verification_result = await TokenRepository.verify_access_token(bearer.credentials, session)
