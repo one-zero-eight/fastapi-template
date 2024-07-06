@@ -1,6 +1,6 @@
 __all__ = ["TokenRepository", "AuthRepository"]
 
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, UTC
 from typing import Optional
 
 from authlib.jose import jwt, JoseError
@@ -53,7 +53,7 @@ class TokenRepository:
     @classmethod
     def _create_access_token(cls, data: dict, expires_delta: timedelta) -> str:
         payload = data.copy()
-        issued_at = datetime.utcnow()
+        issued_at = datetime.now(UTC)
         expire = issued_at + expires_delta
         payload.update({"exp": expire, "iat": issued_at})
         encoded_jwt = jwt.encode({"alg": cls.ALGORITHM}, payload, settings.jwt_private_key.get_secret_value())
