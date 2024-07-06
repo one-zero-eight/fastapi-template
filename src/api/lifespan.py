@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.shared import Shared
 from src.config import settings
 from src.config_schema import Environment
+from src.logging_ import logger
 from src.modules.auth.repository import AuthRepository
 from src.modules.user.repository import UserRepository
 from src.storages.sqlalchemy.storage import SQLAlchemyStorage
@@ -27,8 +28,8 @@ async def setup_repositories():
     if settings.environment == Environment.DEVELOPMENT:
         import logging
 
-        logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
-        logging.info("SQLAlchemy logging is enabled!")
+        logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+        logger.info("SQLAlchemy logging is enabled!")
 
 
 async def setup_predefined():
