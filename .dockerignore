@@ -1,0 +1,13 @@
+# Ignore everything
+*
+
+# Except code
+!/src/
+!/deploy/
+!/alembic/
+!/alembic.ini
+!/pyproject.toml
+!/poetry.lock
+
+# And ignore cache files in the code
+__pycache__
