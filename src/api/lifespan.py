@@ -11,7 +11,7 @@ from pymongo import timeout
 from pymongo.errors import ConnectionFailure
 
 from src.config import settings
-from src.logging_ import logger
+from src.api.logging_ import logger
 from src.modules.user.repository import user_repository
 from src.storages.mongo import document_models
 

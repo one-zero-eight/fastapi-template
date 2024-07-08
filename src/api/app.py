@@ -5,7 +5,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse, FileResponse
 
-import src.logging_  # noqa: F401
+import src.api.logging_  # noqa: F401
 from src.api.docs import generate_unique_operation_id, custom_openapi
 from src.api.lifespan import lifespan
 from src.api.routers import routers
