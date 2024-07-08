@@ -1,7 +1,7 @@
 $schema: "./settings.schema.yaml"
 # ---------- Application settings ----- #
 database:
-  uri: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
+  uri: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres # Database URL, "postgresql+asyncpg://postgres:postgres@db:5432/postgres" inside the docker network
 # Predefined
 predefined:
   first_superuser_login: admin
