@@ -7,7 +7,7 @@ services:
       - "./settings.yaml:/code/settings.yaml:ro" # Read-only settings file
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_started
     restart: always
     ports:
       - "8000:8000"

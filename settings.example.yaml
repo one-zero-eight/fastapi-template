@@ -1,7 +1,7 @@
 $schema: "./settings.schema.yaml"
 # ---------- Application settings ----- #
 database:
-  uri: mongodb://mongoadmin:secret@localhost:27017/db?authSource=admin
+  uri: mongodb://mongoadmin:secret@localhost:27017/db?authSource=admin # MongoDB URI, "mongodb://mongoadmin:secret@db:27017/db?authSource=admin" inside the docker network
 # Predefined
 predefined:
   first_superuser_login: admin
