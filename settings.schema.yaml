@@ -1,41 +1,28 @@
 $schema: http://json-schema.org/draft-07/schema#
 $defs:
-  Cookies:
+  Accounts:
     additionalProperties: false
+    description: InNoHassle-Accounts integration settings
     properties:
-      name:
-        default: token
-        title: Name
+      api_url:
+        default: https://api.innohassle.ru/accounts/v0
+        description: URL of the Accounts API
+        title: Api Url
         type: string
-      domain:
-        default: innohassle.ru
-        title: Domain
+      well_known_url:
+        default: https://api.innohassle.ru/accounts/v0/.well-known
+        description: URL of the well-known endpoint for the Accounts API
+        title: Well Known Url
         type: string
-      allowed_domains:
-        default:
-        - innohassle.ru
-        - api.innohassle.ru
-        - localhost
-        items:
-          type: string
-        title: Allowed Domains
-        type: array
-    title: Cookies
-    type: object
-  Database:
-    additionalProperties: false
-    description: PostgreSQL database settings.
-    properties:
-      uri:
-        examples:
-        - postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
+      api_jwt_token:
+        description: JWT token for accessing the Accounts API as a service
         format: password
-        title: Uri
+        title: Api Jwt Token
         type: string
         writeOnly: true
     required:
-    - uri
-    title: Database
+    - api_jwt_token
+    title: Accounts
     type: object
   Environment:
     enum:
@@ -43,40 +30,6 @@ $defs:
     - production
     title: Environment
     type: string
-  Predefined:
-    additionalProperties: false
-    description: Predefined settings. Will be used in setup stage.
-    properties:
-      first_superuser_login:
-        default: admin
-        description: Login for the first superuser
-        title: First Superuser Login
-        type: string
-      first_superuser_password:
-        default: admin
-        description: Password for the first superuser
-        title: First Superuser Password
-        type: string
-    title: Predefined
-    type: object
-  StaticFiles:
-    additionalProperties: false
-    properties:
-      mount_path:
-        default: /static
-        title: Mount Path
-        type: string
-      mount_name:
-        default: static
-        title: Mount Name
-        type: string
-      directory:
-        default: static
-        format: path
-        title: Directory
-        type: string
-    title: StaticFiles
-    type: object
 additionalProperties: false
 description: Settings for the application.
 properties:
@@ -85,8 +38,7 @@ properties:
     title: $Schema
     type: string
   environment:
-    allOf:
-    - $ref: '#/$defs/Environment'
+    $ref: '#/$defs/Environment'
     default: development
     description: App environment flag
   app_root_path:
@@ -94,67 +46,29 @@ properties:
     description: Prefix for the API path (e.g. "/api/v0")
     title: App Root Path
     type: string
-  database:
-    allOf:
-    - $ref: '#/$defs/Database'
+  database_uri:
     description: PostgreSQL database settings
-  predefined:
-    allOf:
-    - $ref: '#/$defs/Predefined'
-    default:
-      first_superuser_login: admin
-      first_superuser_password: admin
-    description: Predefined settings
-  session_secret_key:
-    description: Secret key for sessions middleware. Use 'openssl rand -hex 32' to
-      generate keys
+    examples:
+    - postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
     format: password
-    title: Session Secret Key
+    title: Database Uri
     type: string
     writeOnly: true
-  jwt_private_key:
-    description: Private key for JWT. Use 'openssl genrsa -out private.pem 2048' to
-      generate keys
-    format: password
-    title: Jwt Private Key
-    type: string
-    writeOnly: true
-  jwt_public_key:
-    description: Public key for JWT. Use 'openssl rsa -in private.pem -pubout -out
-      public.pem' to generate keys
-    title: Jwt Public Key
-    type: string
-  static_files:
-    anyOf:
-    - $ref: '#/$defs/StaticFiles'
-    - type: 'null'
-    default: null
-    description: Static files settings
   cors_allow_origins:
     default:
     - https://innohassle.ru
+    - https://pre.innohassle.ru
     - http://localhost:3000
-    description: CORS origins, used by FastAPI CORSMiddleware
+    description: 'Allowed origins for CORS: from which domains requests to the API
+      are allowed'
     items:
       type: string
     title: Cors Allow Origins
     type: array
-  cookie:
-    anyOf:
-    - $ref: '#/$defs/Cookies'
-    - type: 'null'
-    default:
-      name: token
-      domain: innohassle.ru
-      allowed_domains:
-      - innohassle.ru
-      - api.innohassle.ru
-      - localhost
-    description: Cookies settings
+  accounts:
+    $ref: '#/$defs/Accounts'
 required:
-- database
-- session_secret_key
-- jwt_private_key
-- jwt_public_key
+- database_uri
+- accounts
 title: Settings
 type: object

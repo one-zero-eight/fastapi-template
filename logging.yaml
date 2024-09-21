@@ -34,3 +34,5 @@ loggers:
     propagate: no
   passlib:
     level: ERROR
+  httpx:
+    level: WARNING

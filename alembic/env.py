@@ -29,13 +29,13 @@ import os  # noqa: E402
 app_settings_path = os.getenv("SETTINGS_PATH", "settings.yaml")
 app_settings = safe_load(Path(app_settings_path).read_text())
 # get database uri from settings.yaml
-config.set_main_option("sqlalchemy.url", app_settings["database"]["uri"])
+config.set_main_option("sqlalchemy.url", app_settings["database_uri"])
 
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from src.storages.sqlalchemy.models import Base  # noqa: E402
+from src.storages.sql.models import Base  # noqa: E402
 
 target_metadata = Base.metadata
 

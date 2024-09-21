@@ -11,8 +11,8 @@ This is the FastAPI ASGI application.
 
 ### Technologies
 
-- [Python 3.11](https://www.python.org/downloads/release/python-3117/) & [Poetry](https://python-poetry.org/docs/)
-- [FastAPI](https://fastapi.tiangolo.com/) & [Pydantic](https://docs.pydantic.dev/latest/)
+- [Python 3.12](https://www.python.org/downloads/) & [Poetry](https://python-poetry.org/docs/)
+- [FastAPI](https://fastapi.tiangolo.com/) & [Granian](https://github.com/emmett-framework/granian)
 - Database and ORM: [PostgreSQL](https://www.postgresql.org/), [SQLAlchemy](https://www.sqlalchemy.org/),
   [Alembic](https://alembic.sqlalchemy.org/en/latest/)
 - Formatting and linting: [Ruff](https://docs.astral.sh/ruff/), [pre-commit](https://pre-commit.com/)
@@ -23,11 +23,11 @@ This is the FastAPI ASGI application.
 
 ### Getting started
 
-1. Install [Python 3.11+](https://www.python.org/downloads/release/python-3117/)
+1. Install [Python 3.12+](https://www.python.org/downloads/)
 2. Install [Poetry](https://python-poetry.org/docs/)
 3. Install project dependencies with [Poetry](https://python-poetry.org/docs/cli/#options-2).
    ```bash
-   poetry install --no-root --with dev
+   poetry install
    ```
 4. Set up [pre-commit](https://pre-commit.com/) hooks:
 
@@ -116,10 +116,12 @@ We use Docker with Docker Compose plugin to run the service on servers.
 
 ## Project dependencies
 
-1. Run `poetry update` to update all dependencies
-2. Run `poetry show --outdated` to check for outdated dependencies
+1. Run `poetry update` to update all dependencies (it may update nothing, so double-check)
+2. Run `poetry show --outdated --all` to check for outdated dependencies
 3. Run `poetry add <package>@latest` to add a new dependency if needed
 
 ## Pre-commit hooks
 
 1. Run `poetry run pre-commit autoupdate`
+
+Also, Dependabot will help you to keep your dependencies up-to-date, see [dependabot.yml](.github/dependabot.yml).
