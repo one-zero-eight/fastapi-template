@@ -11,14 +11,14 @@ from pymongo import timeout
 from pymongo.errors import ConnectionFailure
 
 from src.config import settings
-from src.api.logging_ import logger
-from src.modules.user.repository import user_repository
+from src.logging_ import logger
 from src.storages.mongo import document_models
+from src.modules.innohassle_accounts import innohassle_accounts
 
 
 async def setup_database() -> AsyncIOMotorClient:
     motor_client: AsyncIOMotorClient = AsyncIOMotorClient(
-        settings.database.uri.get_secret_value(),
+        settings.database_uri.get_secret_value(),
         connectTimeoutMS=5000,
         serverSelectionTimeoutMS=5000,
         tz_aware=True,
@@ -40,18 +40,11 @@ async def setup_database() -> AsyncIOMotorClient:
     return motor_client
 
 
-async def setup_predefined():
-    if not await user_repository.read_by_login(settings.predefined.first_superuser_login):
-        await user_repository.create_superuser(
-            login=settings.predefined.first_superuser_login, password=settings.predefined.first_superuser_password
-        )
-
-
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     # Application startup
     motor_client = await setup_database()
-    await setup_predefined()
+    await innohassle_accounts.update_key_set()
     yield
 
     # -- Application shutdown --

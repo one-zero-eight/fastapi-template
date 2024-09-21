@@ -2,7 +2,9 @@ from enum import StrEnum
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field, SecretStr, ConfigDict
+from pydantic import Field, SecretStr, ConfigDict
+
+from src.pydantic_base import BaseSchema
 
 
 class Environment(StrEnum):
@@ -10,39 +12,22 @@ class Environment(StrEnum):
     PRODUCTION = "production"
 
 
-class SettingBaseModel(BaseModel):
+class SettingBase(BaseSchema):
     model_config = ConfigDict(use_attribute_docstrings=True, extra="forbid")
 
 
-class Cookies(SettingBaseModel):
-    # Authentication
-    name: str = "token"
-    domain: str = "innohassle.ru"
-    allowed_domains: list[str] = ["innohassle.ru", "api.innohassle.ru", "localhost"]
+class Accounts(SettingBase):
+    """InNoHassle-Accounts integration settings"""
+
+    api_url: str = "https://api.innohassle.ru/accounts/v0"
+    "URL of the Accounts API"
+    well_known_url: str = "https://api.innohassle.ru/accounts/v0/.well-known"
+    "URL of the well-known endpoint for the Accounts API"
+    api_jwt_token: SecretStr
+    "JWT token for accessing the Accounts API as a service"
 
 
-class StaticFiles(SettingBaseModel):
-    mount_path: str = "/static"
-    mount_name: str = "static"
-    directory: Path = Path("static")
-
-
-class Database(SettingBaseModel):
-    """MongoDB database settings."""
-
-    uri: SecretStr = Field(..., examples=["mongodb://username:password@localhost:27017/db?authSource=admin"])
-
-
-class Predefined(SettingBaseModel):
-    """Predefined settings. Will be used in setup stage."""
-
-    first_superuser_login: str = "admin"
-    "Login for the first superuser"
-    first_superuser_password: str = "admin"
-    "Password for the first superuser"
-
-
-class Settings(SettingBaseModel):
+class Settings(SettingBase):
     """
     Settings for the application.
     """
@@ -52,24 +37,12 @@ class Settings(SettingBaseModel):
     "App environment flag"
     app_root_path: str = ""
     'Prefix for the API path (e.g. "/api/v0")'
-    database: Database
+    database_uri: SecretStr = Field(..., examples=["mongodb://mongoadmin:secret@localhost:27017/db?authSource=admin"])
     "MongoDB database settings"
-    predefined: Predefined = Predefined()
-    "Predefined settings"
-    session_secret_key: SecretStr
-    "Secret key for sessions middleware. Use 'openssl " "rand -hex 32' to generate keys"
-    jwt_private_key: SecretStr
-    "Private key for JWT. Use 'openssl genrsa -out private.pem 2048' to generate keys"
-    jwt_public_key: str
-    "Public key for JWT. Use 'openssl rsa -in private.pem -pubout -out public.pem' to generate keys"
-    # Static files
-    static_files: StaticFiles | None = None
-    "Static files settings"
-    cors_allow_origins: list[str] = ["https://innohassle.ru", "http://localhost:3000"]
-    "CORS origins, used by FastAPI CORSMiddleware"
-    # Authentication
-    cookie: Cookies | None = Cookies()
-    "Cookies settings"
+    cors_allow_origins: list[str] = ["https://innohassle.ru", "https://pre.innohassle.ru", "http://localhost:3000"]
+    "Allowed origins for CORS: from which domains requests to the API are allowed"
+    accounts: Accounts
+    "InNoHassle-Accounts integration settings"
 
     @classmethod
     def from_yaml(cls, path: Path) -> "Settings":

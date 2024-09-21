@@ -2,9 +2,9 @@ __all__ = ["User", "UserRole"]
 
 from enum import StrEnum
 
-from pydantic import BaseModel
 from pymongo import IndexModel
 
+from src.pydantic_base import BaseSchema
 from src.storages.mongo.__base__ import CustomDocument
 
 
@@ -13,13 +13,13 @@ class UserRole(StrEnum):
     ADMIN = "admin"
 
 
-class UserSchema(BaseModel):
+class UserSchema(BaseSchema):
+    innohassle_id: str
+    email: str
     name: str | None = None
-    login: str
-    password_hash: str
     role: UserRole = UserRole.DEFAULT
 
 
 class User(UserSchema, CustomDocument):
     class Settings:
-        indexes = [IndexModel("login", unique=True)]
+        indexes = [IndexModel("innohassle_id", unique=True), IndexModel("email", unique=True)]
