@@ -19,7 +19,7 @@ fastapi-swagger = "^0.2.3"
 passlib = "^1.7.4"
 pre-commit = "^3.7.1"
 pydantic = "^2.8.2"
-ruff = "^0.5.1"
+ruff = "^0.6.7"
 sqlalchemy = "^2.0.31"
 gunicorn = "^23.0.0"
 
