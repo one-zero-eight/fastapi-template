@@ -5,10 +5,14 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      everything:
+        patterns:
+          - "*"
 
   # Enable version updates for Docker
   - package-ecosystem: "docker"
-    directories: [ "/", "/deploy" ]
+    directory: "/"
     schedule:
       interval: "weekly"
 
