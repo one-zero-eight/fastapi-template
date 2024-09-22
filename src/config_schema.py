@@ -37,8 +37,8 @@ class Settings(SettingBaseModel):
     'Prefix for the API path (e.g. "/api/v0")'
     database_uri: SecretStr = Field(..., examples=["postgresql+asyncpg://postgres:postgres@localhost:5432/postgres"])
     "PostgreSQL database settings"
-    cors_allow_origins: list[str] = ["https://innohassle.ru", "https://pre.innohassle.ru", "http://localhost:3000"]
-    "Allowed origins for CORS: from which domains requests to the API are allowed"
+    cors_allow_origin_regex: str = ".*"
+    "Allowed origins for CORS: from which domains requests to the API are allowed. Specify as a regex: `https://.*.innohassle.ru`"
     accounts: Accounts
     "InNoHassle-Accounts integration settings"
 
