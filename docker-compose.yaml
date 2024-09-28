@@ -1,8 +1,6 @@
 services:
   api:
-    build:
-      dockerfile: ./deploy/Dockerfile
-      context: .
+    build: .
     volumes:
       - "./settings.yaml:/code/settings.yaml:ro" # Read-only settings file
     depends_on:
