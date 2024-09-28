@@ -48,8 +48,7 @@ FROM base AS production
 
 COPY --from=builder $VENV_PATH $VENV_PATH
 
-COPY ./deploy/docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+COPY --chmod=755 ./deploy/docker-entrypoint.sh /
 
 # Create user with the name poetry
 RUN groupadd -g 1500 poetry && \
