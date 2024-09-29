@@ -23,16 +23,16 @@ ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 FROM base AS builder
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
-        curl \
-        vim \
-        netcat \
         build-essential \
+        curl \
+        netcat \
+        vim \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry. Respects $POETRY_VERSION and $POETRY_HOME
 ENV POETRY_VERSION=1.8.3
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=${POETRY_HOME} python3 - --version ${POETRY_VERSION} && \
+RUN curl -sS https://install.python-poetry.org | POETRY_HOME=${POETRY_HOME} python3 - --version ${POETRY_VERSION} && \
     chmod a+x /opt/poetry/bin/poetry
 
 # We copy our Python requirements here to cache them
