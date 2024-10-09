@@ -7,7 +7,6 @@ from starlette.middleware.cors import CORSMiddleware
 import src.logging_  # noqa: F401
 from src.api import docs
 from src.api.lifespan import lifespan
-from src.api.routers import routers
 from src.config import settings
 from src.config_schema import Environment
 
@@ -41,5 +40,6 @@ if settings.cors_allow_origins:
         allow_origin_regex=".*" if settings.environment == Environment.DEVELOPMENT else None,
     )
 
-for router in routers:
-    app.include_router(router)
+from src.modules.users.routes import router as router_users  # noqa: E402
+
+app.include_router(router_users)
