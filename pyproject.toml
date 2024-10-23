@@ -29,7 +29,10 @@ lint.ignore = [
     # wildcard imports are fine
     "F403",
     "F405",
+    "PLR"
 ]
+lint.extend-select = ["I", "UP", "PL"]
+
 
 [build-system]
 requires = ["poetry-core"]

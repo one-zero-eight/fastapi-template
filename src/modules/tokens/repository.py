@@ -2,7 +2,7 @@ __all__ = ["TokenRepository"]
 
 import time
 
-from authlib.jose import JWTClaims, JoseError, jwt
+from authlib.jose import JoseError, JWTClaims, jwt
 from beanie import PydanticObjectId
 
 from src.modules.innohassle_accounts import innohassle_accounts

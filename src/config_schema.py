@@ -2,7 +2,7 @@ from enum import StrEnum
 from pathlib import Path
 
 import yaml
-from pydantic import Field, SecretStr, ConfigDict
+from pydantic import ConfigDict, Field, SecretStr
 
 from src.pydantic_base import BaseSchema
 
@@ -46,7 +46,7 @@ class Settings(SettingBase):
 
     @classmethod
     def from_yaml(cls, path: Path) -> "Settings":
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             yaml_config = yaml.safe_load(f)
 
         return cls.model_validate(yaml_config)

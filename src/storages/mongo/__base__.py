@@ -3,7 +3,7 @@ __all__ = ["CustomDocument"]
 from typing import Annotated
 
 from beanie import Document, PydanticObjectId
-from pydantic import Field, ConfigDict, WithJsonSchema, GetJsonSchemaHandler
+from pydantic import ConfigDict, Field, GetJsonSchemaHandler, WithJsonSchema
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema
 

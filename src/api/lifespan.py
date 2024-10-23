@@ -12,8 +12,8 @@ from pymongo.errors import ConnectionFailure
 
 from src.config import settings
 from src.logging_ import logger
-from src.storages.mongo import document_models
 from src.modules.innohassle_accounts import innohassle_accounts
+from src.storages.mongo import document_models
 
 
 async def setup_database() -> AsyncIOMotorClient:
@@ -32,7 +32,7 @@ async def setup_database() -> AsyncIOMotorClient:
             server_info_pretty_text = json.dumps(server_info, indent=2, default=str)
             logger.info(f"Connected to MongoDB: {server_info_pretty_text}")
     except ConnectionFailure as e:
-        logger.critical("Could not connect to MongoDB: %s" % e)
+        logger.critical(f"Could not connect to MongoDB: {e}")
         raise e
 
     mongo_db = motor_client.get_database()
