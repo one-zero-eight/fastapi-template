@@ -15,20 +15,16 @@ class SettingBaseModel(BaseModel):
 
 
 class Accounts(SettingBaseModel):
-    """InNoHassle-Accounts integration settings"""
+    """InNoHassle Accounts integration settings"""
 
     api_url: str = "https://api.innohassle.ru/accounts/v0"
     "URL of the Accounts API"
-    well_known_url: str = "https://api.innohassle.ru/accounts/v0/.well-known"
-    "URL of the well-known endpoint for the Accounts API"
     api_jwt_token: SecretStr
     "JWT token for accessing the Accounts API as a service"
 
 
 class Settings(SettingBaseModel):
-    """
-    Settings for the application.
-    """
+    """Settings for the application."""
 
     schema_: str = Field(None, alias="$schema")
     environment: Environment = Environment.DEVELOPMENT
@@ -40,7 +36,7 @@ class Settings(SettingBaseModel):
     cors_allow_origin_regex: str = ".*"
     "Allowed origins for CORS: from which domains requests to the API are allowed. Specify as a regex: `https://.*.innohassle.ru`"
     accounts: Accounts
-    "InNoHassle-Accounts integration settings"
+    "InNoHassle Accounts integration settings"
 
     @classmethod
     def from_yaml(cls, path: Path) -> "Settings":
@@ -52,5 +48,5 @@ class Settings(SettingBaseModel):
     @classmethod
     def save_schema(cls, path: Path) -> None:
         with open(path, "w", encoding="utf-8") as f:
-            schema = {"$schema": "http://json-schema.org/draft-07/schema#", **cls.model_json_schema()}
+            schema = {"$schema": "https://json-schema.org/draft-07/schema", **cls.model_json_schema()}
             yaml.dump(schema, f, sort_keys=False)
