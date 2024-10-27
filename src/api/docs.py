@@ -21,6 +21,8 @@ LICENSE_INFO = {
     "identifier": "MIT",
 }
 
+TAGS_INFO = []
+
 
 def generate_unique_operation_id(route: APIRoute) -> str:
     # Better names for operationId in OpenAPI schema.

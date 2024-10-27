@@ -12,14 +12,18 @@ from src.config import settings
 
 # App definition
 app = FastAPI(
-    root_path=settings.app_root_path,
-    root_path_in_servers=False,
-    version=docs.VERSION,
     title=docs.TITLE,
     summary=docs.SUMMARY,
     description=docs.DESCRIPTION,
+    version=docs.VERSION,
     contact=docs.CONTACT_INFO,
     license_info=docs.LICENSE_INFO,
+    openapi_tags=docs.TAGS_INFO,
+    servers=[
+        {"url": settings.app_root_path, "description": "Current"},
+    ],
+    root_path=settings.app_root_path,
+    root_path_in_servers=False,
     generate_unique_id_function=docs.generate_unique_operation_id,
     lifespan=lifespan,
     docs_url=None,
