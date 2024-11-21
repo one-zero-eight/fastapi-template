@@ -8,7 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.api.exceptions import IncorrectCredentialsException
 from src.modules.tokens.repository import TokenRepository
-from src.modules.users.schemas import UserTokenData
+from src.modules.users.schemas import UserAuthData
 
 bearer_scheme = HTTPBearer(
     scheme_name="Bearer",
@@ -20,7 +20,7 @@ bearer_scheme = HTTPBearer(
 
 async def get_current_user_auth(
     bearer: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-) -> UserTokenData:
+) -> UserAuthData:
     # Prefer header to cookie
     token = bearer and bearer.credentials
     if not token:
@@ -29,7 +29,46 @@ async def get_current_user_auth(
     return token_data
 
 
-USER_AUTH = Annotated[UserTokenData, Depends(get_current_user_auth)]
+USER_AUTH = Annotated[UserAuthData, Depends(get_current_user_auth)]
+{%- elif cookiecutter.session -%}
+__all__ = ["USER_AUTH", "get_current_user_auth"]
+
+from typing import Annotated
+
+from beanie import PydanticObjectId
+from fastapi import Depends, HTTPException
+from starlette.requests import Request
+
+from src.api.exceptions import IncorrectCredentialsException
+from src.modules.users.repository import user_repository
+from src.modules.users.schemas import UserAuthData
+
+
+async def get_current_user_auth(request: Request) -> UserAuthData:
+    uid = request.session.get("uid")
+
+    if uid is None:
+        raise IncorrectCredentialsException(no_credentials=True)
+    {%- if cookiecutter.database == "mongo" %}
+
+    user_id = PydanticObjectId(uid)
+    {%- elif cookiecutter.database == "postgres" %}
+
+    user_id = str(uid)
+    {%- endif %}
+
+    exists = await user_repository.exists(user_id)
+    if not exists:
+        request.session.clear()
+        raise IncorrectCredentialsException()
+
+    banned = await user_repository.is_banned(user_id)
+    if banned:
+        raise HTTPException(status_code=403, detail="You are banned 🥹")
+
+    return UserAuthData(user_id=user_id)
+
+USER_AUTH = Annotated[UserAuthData, Depends(get_current_user_auth)]
 {%- else -%}
 __all__ = ["USER_AUTH", "get_current_user_auth"]
 

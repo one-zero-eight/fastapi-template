@@ -56,6 +56,10 @@ class Settings(SettingBaseModel):
     accounts: Accounts
     "InNoHassle Accounts integration settings"
     {%- endif %}
+    {%- if cookiecutter.session %}
+    session_secret_key: SecretStr
+    "Secret key for session middleware"
+    {%- endif %}
 
     @classmethod
     def from_yaml(cls, path: Path) -> "Settings":

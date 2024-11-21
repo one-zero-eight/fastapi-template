@@ -1,4 +1,3 @@
-__all__ = ["CreateUser", "ViewUser"]
 {% if cookiecutter.database == "mongo" %}
 from beanie import PydanticObjectId
 {% endif %}
@@ -9,8 +8,10 @@ class CreateUser(BaseSchema):
     {%- if cookiecutter.innohassle_accounts %}
     innohassle_id: str
     {%- endif %}
-    email: str
-    name: str | None = None
+    {%- if cookiecutter.login_and_password %}
+    login: str
+    password: str
+    {%- endif %}
 
 
 class ViewUser(BaseSchema):
@@ -22,11 +23,9 @@ class ViewUser(BaseSchema):
     {%- if cookiecutter.innohassle_accounts %}
     innohassle_id: str
     {%- endif %}
-    email: str
-    name: str | None = None
 
 
-class UserTokenData(BaseSchema):
+class UserAuthData(BaseSchema):
     {%- if cookiecutter.database == "postgres" %}
     user_id: int
     {%- elif cookiecutter.database == "mongo" %}

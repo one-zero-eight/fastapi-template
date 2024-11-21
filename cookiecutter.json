@@ -6,7 +6,9 @@
     "postgres",
     null
   ],
-  "innohassle_accounts": true,
+  "innohassle_accounts": false,
+  "session": false,
+  "login_and_password": false,
   "_copy_without_render": [
     ".github/workflows/*"
   ],
@@ -17,5 +19,6 @@
   "__include_mongo": "{{cookiecutter.database == 'mongo' }}",
   "__include_sql": "{{cookiecutter.database == 'postgres' }}",
   "__include_tokens": "{{cookiecutter.innohassle_accounts }}",
-  "__include_innohassle_accounts": "{{cookiecutter.innohassle_accounts }}"
+  "__include_innohassle_accounts": "{{cookiecutter.innohassle_accounts }}",
+  "__include_login_and_password": "{{cookiecutter.login_and_password }}"
 }

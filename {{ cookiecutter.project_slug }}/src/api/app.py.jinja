@@ -59,6 +59,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+{%- if cookiecutter.session %}
+from src.config_schema import Environment  # noqa: E402
+from starlette.middleware.sessions import SessionMiddleware  # noqa: E402
+
+session_cookie = "__Secure-session" if settings.environment == Environment.PRODUCTION else "session"
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.session_secret_key.get_secret_value(),
+    session_cookie=session_cookie,
+    max_age=14 * 24 * 60 * 60,  # 14 days, in seconds
+    path=settings.app_root_path or "/",
+    same_site="lax",
+    https_only=True if settings.environment == Environment.PRODUCTION else False,
+    domain=None,
+)
+{%- endif %}
+
 from src.modules.users.routes import router as router_users  # noqa: E402
 
 app.include_router(router_users)

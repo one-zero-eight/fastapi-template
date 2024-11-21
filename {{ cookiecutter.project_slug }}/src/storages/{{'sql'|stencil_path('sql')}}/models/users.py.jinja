@@ -17,11 +17,15 @@ class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
     "Unique identifier for the object"
+    {%- if cookiecutter.innohassle_accounts %}
     innohassle_id: Mapped[str]
     "InnoHassle identifier"
-    email: Mapped[str]
-    "User's email"
-    name: Mapped[str | None]
-    "User's name"
+    {%- endif %}
+    {%- if cookiecutter.login_and_password %}
+    login: Mapped[str] = mapped_column(unique=True)
+    "User's login"
+    password_hash: Mapped[str]
+    "Hash of user's password"
+    {%- endif %}
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.DEFAULT)
     "User's role"

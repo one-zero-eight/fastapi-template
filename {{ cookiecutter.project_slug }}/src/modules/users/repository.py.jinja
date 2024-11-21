@@ -1,7 +1,7 @@
 {%- if cookiecutter.database == "postgres" -%}
 __all__ = ["user_repository"]
 
-from sqlalchemy import select
+from sqlalchemy import select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.users.schemas import CreateUser, ViewUser
@@ -16,7 +16,17 @@ class SqlUserRepository:
 
     async def create(self, user: CreateUser) -> ViewUser:
         async with self._create_session() as session:
+            {%- if cookiecutter.login_and_password %}
+            from src.modules.login_and_password.repository import login_password_repository
+
+            data = user.model_dump()
+            password = data.pop("password")
+            data["password_hash"] = login_password_repository.get_password_hash(password)
+            created = User(**data)
+            {%- else %}
             created = User(**user.model_dump())
+            {%- endif %}
+
             session.add(created)
             await session.commit()
             return ViewUser.model_validate(created, from_attributes=True)
@@ -25,11 +35,30 @@ class SqlUserRepository:
         async with self._create_session() as session:
             user = await session.get(User, user_id)
             return ViewUser.model_validate(user, from_attributes=True)
+    {%- if cookiecutter.innohassle_accounts %}
 
     async def read_id_by_innohassle_id(self, innohassle_id: str) -> int | None:
         async with self._create_session() as session:
             user_id = await session.scalar(select(User.id).where(User.innohassle_id == innohassle_id))
             return user_id
+    {%- endif %}
+    {%- if cookiecutter.login_and_password %}
+
+    async def read_id_and_password_hash(self, login: str) -> tuple[int, str] | None:
+        async with self._create_session() as session:
+            query = select(User.id, User.password_hash).where(User.login == login)
+            data = await session.execute(query)
+            data = data.fetchone()
+            if data is None:
+                return None
+            return data
+    {%- endif %}
+    async def exists(self, user_id: int) -> bool:
+        async with self._create_session() as session:
+            return await session.scalar(select(exists().where(User.id == user_id)))
+
+    async def is_banned(self, user_id: int) -> bool:
+        return False
 
 
 user_repository: SqlUserRepository = SqlUserRepository()
@@ -45,15 +74,41 @@ from src.storages.mongo.users import User
 # noinspection PyMethodMayBeStatic
 class UserRepository:
     async def create(self, user: CreateUser) -> User:
+        {%- if cookiecutter.login_and_password %}
+        from src.modules.login_and_password.repository import login_password_repository
+
+        data = user.model_dump()
+        password = data.pop("password")
+        data["password_hash"] = login_password_repository.get_password_hash(password)
+        created = User(**data)
+        {%- else %}
         created = User(**user.model_dump())
+        {%- endif %}
+
         return await created.insert()
 
-    async def read(self, user_id: int) -> User | None:
+    async def read(self, user_id: PydanticObjectId) -> User | None:
         return await User.get(user_id)
+    {%- if cookiecutter.innohassle_accounts %}
 
     async def read_id_by_innohassle_id(self, innohassle_id: str) -> PydanticObjectId | None:
         user = await User.find_one(User.innohassle_id == innohassle_id)
         return user.id if user else None
+    {%- endif %}
+    {%- if cookiecutter.login_and_password %}
+
+    async def read_id_and_password_hash(self, login: str) -> tuple[PydanticObjectId, str] | None:
+        user = await User.find_one(User.login == login)
+        if user is None:
+            return None
+        return user.id, user.password_hash
+    {%- endif %}
+
+    async def exists(self, user_id: PydanticObjectId) -> bool:
+        return bool(await User.find(User.id == user_id, limit=1).count())
+
+    async def is_banned(self, user_id: str | PydanticObjectId) -> bool:
+        return False
 
 
 user_repository: UserRepository = UserRepository()

@@ -6,7 +6,7 @@ from authlib.jose import JoseError, JWTClaims, jwt
 
 from src.modules.innohassle_accounts import innohassle_accounts
 from src.modules.users.repository import user_repository
-from src.modules.users.schemas import CreateUser, UserTokenData
+from src.modules.users.schemas import CreateUser, UserAuthData
 
 
 class TokenRepository:
@@ -38,7 +38,7 @@ class TokenRepository:
         return user_id
 
     @classmethod
-    async def verify_user_token(cls, token: str, credentials_exception) -> UserTokenData:
+    async def verify_user_token(cls, token: str, credentials_exception) -> UserAuthData:
         try:
             payload = cls.decode_token(token)
             innohassle_id: str = payload.get("uid")
@@ -47,6 +47,6 @@ class TokenRepository:
             user_id = await cls._fetch_user_id_or_create(innohassle_id)
             if user_id is None:
                 raise credentials_exception
-            return UserTokenData(user_id=user_id, innohassle_id=innohassle_id)
+            return UserAuthData(user_id=user_id, innohassle_id=innohassle_id)
         except JoseError:
             raise credentials_exception

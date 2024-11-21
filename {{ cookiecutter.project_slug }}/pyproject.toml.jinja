@@ -31,6 +31,13 @@ alembic = "^1.13.3"
 asyncpg = "^0.29.0"
 sqlalchemy = "^2.0.35"
 {% endif %}
+{%- if cookiecutter.login_and_password %}
+
+[tool.poetry.group.passwords.dependencies]
+bcrypt = "^4.2.1"
+itsdangerous = "^2.2.0"
+passlib = "^1.7.4"
+{%- endif %}
 
 [tool.ruff]
 line-length = 120
