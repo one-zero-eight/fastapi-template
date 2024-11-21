@@ -1,0 +1,21 @@
+{
+  "project_name": "f.e. Events, Music Room, Sports",
+  "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-') }}",
+  "database": [
+    "mongo",
+    "postgres",
+    null
+  ],
+  "innohassle_accounts": true,
+  "_copy_without_render": [
+    ".github/workflows/*"
+  ],
+  "_extensions": [
+    "local_extensions.Stencil"
+  ],
+  "__include_alembic": "{{cookiecutter.database == 'postgres' }}",
+  "__include_mongo": "{{cookiecutter.database == 'mongo' }}",
+  "__include_sql": "{{cookiecutter.database == 'postgres' }}",
+  "__include_tokens": "{{cookiecutter.innohassle_accounts }}",
+  "__include_innohassle_accounts": "{{cookiecutter.innohassle_accounts }}"
+}

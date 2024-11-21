@@ -1,6 +1,0 @@
-$schema: "./settings.schema.yaml"
-environment: development
-database_uri: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres # Database URL, "postgresql+asyncpg://postgres:postgres@db:5432/postgres" inside the docker network
-accounts:
-  # get from https://api.innohassle.ru/accounts/v0/tokens/generate-service-token?sub=service-name&scopes=users&only_for_me=true
-  api_jwt_token: "secret"

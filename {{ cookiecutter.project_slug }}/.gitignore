@@ -1,0 +1,15 @@
+### PyCharm ###
+.idea
+
+### Cache ###
+__pycache__
+.ruff_cache
+
+### Environment ###
+.env
+settings.yaml
+static
+
+### Sensible ###
+/private.pem
+/public.pem
