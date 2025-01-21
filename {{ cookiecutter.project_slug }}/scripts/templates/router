@@ -1,0 +1,8 @@
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/{module_name}", tags=["{ModuleName}"])
+
+
+@router.get("/none")
+async def _() -> None:
+    return None

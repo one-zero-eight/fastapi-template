@@ -1,0 +1,10 @@
+from src.pydantic_base import BaseSchema
+from src.storages.mongo.__base__ import CustomDocument
+
+
+class {ModelName}Schema(BaseSchema):
+    pass
+
+
+class {ModelName}({ModelName}Schema, CustomDocument):
+    pass

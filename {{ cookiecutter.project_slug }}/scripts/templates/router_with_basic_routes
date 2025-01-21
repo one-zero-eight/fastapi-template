@@ -1,0 +1,69 @@
+import src.modules.{module_name}.crud as c
+
+from beanie import PydanticObjectId
+from fastapi import APIRouter, Body, HTTPException
+
+router = APIRouter(prefix="/{module_name}", tags=["{ModuleName}"])
+
+
+@router.post("/")
+async def create_{model_name}_route(data: c.Create{ModelName}) -> c.{ModelName}:
+    return await c.create(data)
+
+
+@router.get("/by-id/{id}")
+async def read_{model_name}_route(id: PydanticObjectId) -> c.{ModelName}:
+    obj = await c.read(id)
+    if obj is None:
+        raise HTTPException(status_code=404, detail=f"Object with id={id} not found")
+    return obj
+
+
+@router.put("/by-id/{id}")
+async def update_{model_name}_route(id: PydanticObjectId, data: c.Update{ModelName}) -> c.{ModelName}:
+    obj = await c.update(id, data)
+    if obj is None:
+        raise HTTPException(status_code=404, detail=f"Object with id={id} not found")
+    return obj
+
+
+@router.delete("/by-id/{id}")
+async def delete_{model_name}_route(id: PydanticObjectId) -> bool:
+    return await c.delete(id)
+
+
+@router.get("/")
+async def read_all_{model_name}_route() -> list[c.{ModelName}]:
+    return await c.read_all()
+
+
+@router.post("/paginated")
+async def read_all_paginated_route(pagination: c.PaginationOption) -> c.PaginatedResult[c.{ModelName}]:
+    return await c.read_all_paginated(pagination)
+
+
+@router.get("/count")
+async def count_{model_name}_route() -> int:
+    return await c.count()
+
+
+@router.post("/bulk/create")
+async def bulk_create_{model_name}_route(data: list[c.Create{ModelName}] = Body(min_length=1)) -> list[PydanticObjectId | None]:
+    return await c.bulk_create(data)
+
+
+@router.post("/bulk/read")
+async def bulk_read_{model_name}_route(ids: list[PydanticObjectId] = Body(min_length=1)) -> list[c.{ModelName} | None]:
+    return await c.bulk_read(ids)
+
+
+@router.post("/bulk/update")
+async def bulk_update_{model_name}_route(
+    data: list[tuple[PydanticObjectId, c.Update{ModelName}]] = Body(min_length=1),
+) -> list[c.{ModelName} | None]:
+    return await c.bulk_update(data)
+
+
+@router.post("/bulk/delete")
+async def bulk_delete_{model_name}_route(ids: list[PydanticObjectId] = Body(min_length=1)) -> int:
+    return await c.bulk_delete(ids)

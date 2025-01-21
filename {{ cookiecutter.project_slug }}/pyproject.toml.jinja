@@ -19,6 +19,10 @@ pre-commit = "^3.8.0"
 pydantic = "^2.9.2"
 ruff = "^0.6.7"
 uvicorn = "^0.31.0"
+
+[tool.poetry.group.tui.dependencies]
+simple-term-menu = "^1.6.6"
+pygments = "^2.18.0"
 {%- if cookiecutter.database == "mongo" %}
 
 [tool.poetry.group.mongo.dependencies]

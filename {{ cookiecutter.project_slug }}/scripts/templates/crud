@@ -1,0 +1,104 @@
+from beanie import PydanticObjectId
+from pydantic import BaseModel, PositiveInt, TypeAdapter
+
+from src.storages.mongo.{model_name} import {ModelName}, {ModelName}Schema
+
+
+class Create{ModelName}({ModelName}Schema):
+    pass
+
+
+class Update{ModelName}({ModelName}Schema):
+    pass
+
+
+async def create(data: Create{ModelName}) -> {ModelName}:
+    return await {ModelName}.model_validate(data, from_attributes=True).create()
+
+
+async def read(id: PydanticObjectId) -> {ModelName} | None:
+    return await {ModelName}.get(id)
+
+
+async def read_all() -> list[{ModelName}]:
+    return await {ModelName}.all().to_list()
+
+
+async def update(id: PydanticObjectId, data: Update{ModelName}) -> {ModelName} | None:
+    obj = await {ModelName}.get(id)
+    if obj:
+        await obj.set(data.model_dump())
+    return obj
+
+
+async def delete(id: PydanticObjectId) -> bool:
+    result = await {ModelName}.find_one({"_id": id}).delete()
+    return result and (result.deleted_count > 0)
+
+
+class PaginationMetadata(BaseModel):
+    total_count: int
+    page: PositiveInt
+    page_size: PositiveInt
+
+
+class PaginatedResult[T](BaseModel):
+    metadata: PaginationMetadata
+    data: list[T]
+
+
+class PaginationOption(BaseModel):
+    page: PositiveInt
+    "Page number, starting from 1"
+    page_size: PositiveInt
+    "Number of items per page, should be greater than 0"
+
+
+async def read_all_paginated(pagination: PaginationOption) -> PaginatedResult[{ModelName}]:
+    page, page_size = pagination.page, pagination.page_size
+    q = {ModelName}.aggregate(
+        [
+            {
+                "$facet": {
+                    "metadata": [{"$count": "totalCount"}],
+                    "data": [{"$skip": (page - 1) * page_size}, {"$limit": page_size}],
+                }
+            },
+        ]
+    )
+    result = await q.to_list()
+    total_count = result[0]["metadata"][0]["totalCount"] if result[0]["metadata"] else 0
+    type_adapter = TypeAdapter(list[{ModelName}])
+    return PaginatedResult[{ModelName}](
+        metadata=PaginationMetadata(total_count=total_count, page=page, page_size=page_size),
+        data=type_adapter.validate_python(result[0]["data"]),
+    )
+
+
+async def count() -> int:
+    return await {ModelName}.all().count()
+
+
+async def bulk_create(data: list[Create{ModelName}]) -> list[PydanticObjectId | None]:
+    objs = [{ModelName}.model_validate(d, from_attributes=True) for d in data]
+    await {ModelName}.insert_many(objs)
+    return [obj.id for obj in objs]
+
+
+async def bulk_read(ids: list[PydanticObjectId]) -> list[{ModelName} | None]:
+    return [await {ModelName}.get(id) for id in ids]
+
+
+async def bulk_update(data: list[tuple[PydanticObjectId, Update{ModelName}]]) -> list[{ModelName} | None]:
+    objs = []
+    for id, d in data:
+        obj = await {ModelName}.get(id)
+        if obj:
+            await obj.set(d.model_dump())
+        objs.append(obj)
+    return objs
+
+
+async def bulk_delete(ids: list[PydanticObjectId]) -> int:
+    result = await {ModelName}.find({"_id": {"$in": ids}}).delete()
+    return result.deleted_count
