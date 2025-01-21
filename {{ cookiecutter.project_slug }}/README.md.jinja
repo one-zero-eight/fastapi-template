@@ -86,3 +86,15 @@ We use Docker with Docker Compose plugin to run the service on servers.
 1. Run `poetry run pre-commit autoupdate`
 
 Also, Dependabot will help you to keep your dependencies up-to-date, see [dependabot.yml](.github/dependabot.yml).
+{% if cookiecutter.database == "mongo" %}
+# How to dump the database
+
+1. Dump:
+   ```bash
+   docker compose exec db sh -c 'mongodump "mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@localhost:27017/db?authSource=admin" --db=db --out=dump/'
+   ```
+2. Restore:
+   ```bash
+   docker compose exec db sh -c 'mongorestore "mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@localhost:27017/db?authSource=admin" --drop /dump/db'
+   ```
+{% endif %}
