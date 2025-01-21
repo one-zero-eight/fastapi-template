@@ -1,6 +1,7 @@
 import ast
 import os
 import re
+import shutil
 import subprocess
 from inspect import cleandoc
 from pathlib import Path
@@ -8,6 +9,8 @@ from pathlib import Path
 import astor
 import simple_term_menu
 from pygments import formatters, highlight, lexers
+from pygments.style import Style
+from pygments.token import Text
 from simple_term_menu import TerminalMenu
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -40,20 +43,30 @@ def as_identifier(name: str) -> str:
 
 
 def ruff_format(code: str) -> str:
-    code = subprocess.run(
-        ["ruff", "check", "--fix", "-"],
-        input=code,
-        text=True,
-        capture_output=True,
-        check=True,
-    ).stdout
-    code = subprocess.run(
-        ["ruff", "format", "-"],
-        input=code,
-        text=True,
-        capture_output=True,
-        check=True,
-    ).stdout
+    try:
+        r = subprocess.run(
+            ["ruff", "check", "--fix", "-"],
+            input=code,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        code = r.stdout
+    except subprocess.CalledProcessError as e:
+        h = highlight(e.stderr, PY_LEXER, FORMATTER)
+        print(f"Error in ruff format:\n{h}")
+    try:
+        r = subprocess.run(
+            ["ruff", "format", "-"],
+            input=code,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        code = r.stdout
+    except subprocess.CalledProcessError as e:
+        h = highlight(e.stderr, PY_LEXER, FORMATTER)
+        print(f"Error in ruff format:\n{h}")
     return code
 
 
@@ -94,8 +107,8 @@ def list_modules_and_models():
         model = _.removesuffix(".py")
         models.append({"name": model, "included": model in included_models})
 
-    modules.sort(key=lambda x: os.path.getctime(f"src/modules/{x["name"]}"), reverse=True)
-    models.sort(key=lambda x: os.path.getctime(f"src/storages/mongo/{x["name"]}.py"), reverse=True)
+    modules.sort(key=lambda x: os.path.getctime(f"src/modules/{x['name']}"), reverse=True)
+    models.sort(key=lambda x: os.path.getctime(f"src/storages/mongo/{x['name']}.py"), reverse=True)
 
     return modules, models
 
@@ -220,7 +233,7 @@ def include_router_func(module_name: str | None = None):
     if module_name is None:
         modules_with_router = [m for m in modules if m["routes"]]
         terminal_menu = TerminalMenu(
-            [f"{m["name"]} (already included)" if m["router_included"] else m["name"] for m in modules_with_router],
+            [f"{m['name']} (already included)" if m["router_included"] else m["name"] for m in modules_with_router],
             title="Select an module:",
             preview_title=f'File "{APP_PATH}"',
             preview_command=preview,
@@ -392,8 +405,137 @@ def implement_crud_func(model_name: str | None = None, module_name: str | None =
         return
 
 
+def delete_module(module_name: str | None = None):
+    """
+    "Delete module" Option:
+    1. Prompt the user to choose a module to delete (if not given).
+    2. Show all references to this module found in the entire codebase.
+    3. Ask for confirmation.
+    4. Remove references from src/api/app.py (router import + app.include_router).
+    5. Delete the module folder.
+    6. Warn user that other references may need manual cleanup.
+    """
+    modules, _ = list_modules_and_models()
+
+    # If there are no modules, just exit
+    if not modules:
+        print("No modules found to delete.")
+        return
+
+    module_names = [m["name"] for m in modules]
+    if not module_name:
+        # Let user pick from the existing modules
+        def preview(m: str):
+            # We won't do a fancy multi-file preview here, just docstring or prompt
+            return f"Selected module: {m}"
+
+        terminal_menu = TerminalMenu(
+            module_names,
+            title="Select a module to delete:",
+            preview_title="Confirmation",
+            preview_command=preview,
+            **DEFAULT_TERM_MENU,
+        )
+        idx = terminal_menu.show()
+        module_name = module_names[idx]
+
+    elif module_name not in module_names:
+        print(f"Module '{module_name}' not found in src/modules/.")
+        return
+
+    # Find references to this module in the entire project
+    references = []
+    for root, dirs, files in os.walk(BASE_DIR):
+        # Optionally skip hidden, venv, etc.:
+        # if "venv" in dirs: dirs.remove("venv")
+        for file in files:
+            if file.endswith(".py"):
+                file_path = Path(root) / file
+                try:
+                    lines = file_path.read_text().splitlines()
+                except UnicodeDecodeError:
+                    continue  # skip non-text or problematic files
+
+                for i, line in enumerate(lines, start=1):
+                    # A naive way to check references:
+                    if f"src.modules.{module_name}" in line:
+                        references.append((file_path, i, line.strip()))
+
+    # Build a preview string of references found
+    if references:
+        ref_preview = ["References found in project:\n"]
+        for ref_file, ref_line_no, ref_line in references:
+            ref_preview.append(f"- {ref_file.relative_to(BASE_DIR)} (line {ref_line_no}): {ref_line}")
+        ref_preview_str = "\n".join(ref_preview)
+    else:
+        ref_preview_str = "No direct references found apart from potential router usage in app.py.\n"
+
+    # We'll do a second pass to see if "src/api/app.py" includes a router import
+    app_py_lines = APP_PATH.read_text().splitlines()
+    import_line_idx = None
+    include_line_idx = None
+    for i, line in enumerate(app_py_lines):
+        if f"from src.modules.{module_name}.routes import router as router_{module_name}" in line:
+            import_line_idx = i
+        if f"app.include_router(router_{module_name})" in line:
+            include_line_idx = i
+
+    def preview_delete(_):
+        return (
+            f"You are about to delete the module '{module_name}'.\n\n"
+            + ref_preview_str
+            + "\n\nPress ENTER on 'Yes' to proceed, or 'No' to abort."
+        )
+
+    # Ask user for confirmation
+    confirm_menu = TerminalMenu(
+        ["Yes", "No"],
+        title=f"Delete module '{module_name}'?",
+        preview_command=preview_delete,
+        preview_title="Module Deletion Confirmation",
+        **DEFAULT_TERM_MENU,
+    )
+    choice = confirm_menu.show()
+
+    if choice == 0:  # Yes
+        # Remove references in app.py
+        changed_app_py = False
+        new_app_py_lines = app_py_lines.copy()
+
+        # Remove router import line
+        if import_line_idx is not None:
+            new_app_py_lines[import_line_idx] = ""
+
+        # Remove app.include_router line
+        if include_line_idx is not None:
+            new_app_py_lines[include_line_idx] = ""
+        if import_line_idx is not None or include_line_idx is not None:
+            changed_app_py = True
+
+        if changed_app_py:
+            # Filter out empty lines if you want, or leave them as blank
+            filtered_app_py_lines = [line for line in new_app_py_lines if line.strip() != ""]
+            updated_content = ruff_format("\n".join(filtered_app_py_lines) + "\n")
+            APP_PATH.write_text(updated_content)
+
+        # Finally, remove the module folder
+        target_dir = Path("src/modules") / module_name
+        if target_dir.exists() and target_dir.is_dir():
+            shutil.rmtree(target_dir)
+            print(f"Module '{module_name}' directory removed.")
+        else:
+            print(f"Module directory '{target_dir}' does not exist or is not a directory.")
+
+        print(
+            "Module deletion completed. If there were other references shown above, "
+            "please remove them manually if needed."
+        )
+    else:
+        print("Aborted module deletion.")
+
+
 def main():
-    options = ["New model", "Implement CRUD+ repository", "New router"]
+    options = ["New model", "Implement CRUD+ repository", "New router", "Delete module"]
 
     def preview(x):
         if x == "New router":
@@ -404,18 +546,22 @@ def main():
             return cleandoc(new_model_func.__doc__)
         elif x == "Implement CRUD+ repository":
             return cleandoc(implement_crud_func.__doc__)
+        elif x == "Delete module":
+            return cleandoc(delete_module.__doc__)
 
     terminal_menu = TerminalMenu(
         options, title="Select an option:", preview_command=preview, preview_title="Description", **DEFAULT_TERM_MENU
     )
     menu_entry_index = terminal_menu.show()
-
-    if options[menu_entry_index] == "New model":
+    choice = options[menu_entry_index]
+    if choice == "New model":
         new_model_func()
-    elif options[menu_entry_index] == "Implement CRUD+ repository":
+    elif choice == "Implement CRUD+ repository":
         implement_crud_func()
-    elif options[menu_entry_index] == "New router":
+    elif choice == "New router":
         new_router_func()
+    elif choice == "Delete module":
+        delete_module()
     else:
         raise ValueError("Unknown option")
 
