@@ -8,7 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.api.exceptions import IncorrectCredentialsException
 from src.modules.tokens.repository import TokenRepository
-from src.modules.users.schemas import UserAuthData
+from src.modules.user.schemas import UserAuthData
 
 bearer_scheme = HTTPBearer(
     scheme_name="Bearer",
@@ -40,8 +40,8 @@ from fastapi import Depends, HTTPException
 from starlette.requests import Request
 
 from src.api.exceptions import IncorrectCredentialsException
-from src.modules.users.repository import user_repository
-from src.modules.users.schemas import UserAuthData
+from src.modules.user.repository import user_repository
+from src.modules.user.schemas import UserAuthData
 
 
 async def get_current_user_auth(request: Request) -> UserAuthData:

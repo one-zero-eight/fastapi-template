@@ -5,8 +5,8 @@ import time
 from authlib.jose import JoseError, JWTClaims, jwt
 
 from src.modules.innohassle_accounts import innohassle_accounts
-from src.modules.users.repository import user_repository
-from src.modules.users.schemas import CreateUser, UserAuthData
+from src.modules.user.repository import user_repository
+from src.modules.user.schemas import CreateUser, UserAuthData
 
 
 class TokenRepository:

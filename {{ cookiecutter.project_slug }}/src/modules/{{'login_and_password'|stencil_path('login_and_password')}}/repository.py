@@ -1,7 +1,7 @@
 __all__ = ["LoginPasswordRepository", "login_password_repository"]
 
-from src.modules.users.schemas import UserAuthData
-from src.modules.users.repository import user_repository
+from src.modules.user.schemas import UserAuthData
+from src.modules.user.repository import user_repository
 
 from passlib.context import CryptContext
 

@@ -4,7 +4,7 @@ __all__ = ["user_repository"]
 from sqlalchemy import select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.users.schemas import CreateUser, ViewUser
+from src.modules.user.schemas import CreateUser, ViewUser
 from src.storages.sql.models import User
 
 
@@ -67,7 +67,7 @@ __all__ = ["user_repository"]
 
 from beanie import PydanticObjectId
 
-from src.modules.users.schemas import CreateUser
+from src.modules.user.schemas import CreateUser
 from src.storages.mongo.users import User
 
 
