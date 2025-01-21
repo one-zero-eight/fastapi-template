@@ -1,6 +1,7 @@
 import ast
 import os
 import re
+import readline  # noqa
 import shutil
 import subprocess
 from inspect import cleandoc
@@ -11,512 +12,649 @@ import simple_term_menu
 from pygments import formatters, highlight, lexers
 from simple_term_menu import TerminalMenu
 
+# ------------------------------------------------------------------------------
+# Constants and Global Settings
+# ------------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parents[1]
-
 os.chdir(BASE_DIR)
 
 APP_PATH = Path("src/api/app.py")
 MODELS_REGISTRY_PATH = Path("src/storages/mongo/__init__.py")
 TEMPLATES_PATH = Path("scripts/templates")
+
 PY_LEXER = lexers.get_lexer_by_name("python", stripnl=False, stripall=False)
-FORMATTER = formatters.TerminalFormatter(bg="dark")  # dark or light
+FORMATTER = formatters.TerminalFormatter(bg="dark")  # 'dark' or 'light'
+
 DEFAULT_TERM_MENU = {"preview_size": 1.00, "menu_cursor": "❯ "}
 simple_term_menu.MIN_VISIBLE_MENU_ENTRIES_COUNT = 5
 
 
-def to_camel_case(snake_str):
+# ------------------------------------------------------------------------------
+# Utility Functions
+# ------------------------------------------------------------------------------
+def to_camel_case(snake_str: str) -> str:
+    """Convert a snake_case string to CamelCase."""
     return "".join(x.capitalize() for x in snake_str.split("_"))
 
 
-def to_snake_case(camel_str):
+def to_snake_case(camel_str: str) -> str:
+    """Convert a CamelCase string to snake_case."""
     return re.sub(r"(?<!^)(?=[A-Z ])", "_", camel_str).lower()
 
 
 def as_identifier(name: str) -> str:
-    name = to_snake_case(name)
-    if not name.isidentifier():
-        print(f"Invalid name: {name}. Please use a valid Python identifier.")
-        raise ValueError("Invalid name")
-    return name
+    """
+    Ensure a string is a valid Python identifier by:
+    1. Converting from CamelCase to snake_case (if needed).
+    2. Checking `name.isidentifier()`.
+    Raises ValueError if not valid.
+    """
+    snake = to_snake_case(name)
+    if not snake.isidentifier():
+        print(f"Invalid name: '{name}'. Please use a valid Python identifier.")
+        raise ValueError(f"Invalid name: {name}")
+    return snake
 
 
 def ruff_format(code: str) -> str:
+    """
+    Run Ruff to fix and format the code snippet in-memory.
+    Return the resulting (potentially reformatted) string.
+    """
+    # Step 1: Ruff check --fix
     try:
-        r = subprocess.run(
+        result = subprocess.run(
             ["ruff", "check", "--fix", "-"],
             input=code,
             text=True,
             capture_output=True,
             check=True,
         )
-        code = r.stdout
+        code = result.stdout
     except subprocess.CalledProcessError as e:
-        h = highlight(e.stderr, PY_LEXER, FORMATTER)
-        print(f"Error in ruff format:\n{h}")
+        print("Error in Ruff format stage (check --fix):")
+        print(highlight(e.stderr, PY_LEXER, FORMATTER))
+
+    # Step 2: Ruff format
     try:
-        r = subprocess.run(
+        result = subprocess.run(
             ["ruff", "format", "-"],
             input=code,
             text=True,
             capture_output=True,
             check=True,
         )
-        code = r.stdout
+        code = result.stdout
     except subprocess.CalledProcessError as e:
-        h = highlight(e.stderr, PY_LEXER, FORMATTER)
-        print(f"Error in ruff format:\n{h}")
+        print("Error in Ruff format stage (format):")
+        print(highlight(e.stderr, PY_LEXER, FORMATTER))
+
     return code
 
 
-def list_modules_and_models():
-    modules = []
-    models = []
+def highlight_preview(content: str) -> str:
+    """Return a syntax-highlighted preview of Python code."""
+    return highlight(content, PY_LEXER, FORMATTER)
+
+
+def load_template(template_name: str) -> str:
+    """Load a text template from the TEMPLATES_PATH directory."""
+    return (TEMPLATES_PATH / template_name).read_text()
+
+
+# ------------------------------------------------------------------------------
+# Data Retrieval / Parsing
+# ------------------------------------------------------------------------------
+def list_modules_and_models() -> tuple[list[dict], list[dict]]:
+    """
+    Scan the "src/modules" and "src/storages/mongo" directories to gather
+    information about available modules and models. Returns two lists:
+        modules: [
+            {"name": str, "routes": bool, "crud": bool, "router_included": bool},
+            ...
+        ],
+        models: [
+            {"name": str, "included": bool},
+            ...
+        ]
+    """
+    modules_info = []
+    models_info = []
+
     app_py_lines = APP_PATH.read_text().splitlines()
-    model__init__ = MODELS_REGISTRY_PATH.read_text()
-    model__init_ast = ast.parse(model__init__)
+
+    # Parse __init__.py in mongo to see which models are imported
+    model__init_content = MODELS_REGISTRY_PATH.read_text()
+    model__init_ast = ast.parse(model__init_content)
     included_models = []
 
     class ModelVisitor(ast.NodeVisitor):
-        def visit_ImportFrom(self, node):
+        def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
             if node.module == "src.storages.mongo":
                 for alias in node.names:
                     included_models.append(alias.name)
 
     ModelVisitor().visit(model__init_ast)
 
+    # Collect modules
     for module in os.listdir("src/modules"):
-        if not os.path.isdir(f"src/modules/{module}") or module.startswith("__"):
+        full_path = Path("src/modules") / module
+        if not full_path.is_dir() or module.startswith("__"):
             continue
-        routes_exists = os.path.exists(f"src/modules/{module}/routes.py")
-        crud_exists = os.path.exists(f"src/modules/{module}/crud.py")
+
+        routes_exists = (full_path / "routes.py").exists()
+        crud_exists = (full_path / "crud.py").exists()
         router_included = any(
             f"from src.modules.{module}.routes import router as router_{module}" in line for line in app_py_lines
         )
-        modules.append(
-            {"name": module, "routes": routes_exists, "crud": crud_exists, "router_included": router_included}
+
+        modules_info.append(
+            {
+                "name": module,
+                "routes": routes_exists,
+                "crud": crud_exists,
+                "router_included": router_included,
+            }
         )
 
-    for _ in os.listdir("src/storages/mongo"):
-        if not _.endswith(".py") or _.startswith("__"):
+    # Collect models
+    for file_name in os.listdir("src/storages/mongo"):
+        if not file_name.endswith(".py") or file_name.startswith("__"):
             continue
-        content = Path(f"src/storages/mongo/{_}").read_text()
-        if "Document" not in content:
+        file_content = Path(f"src/storages/mongo/{file_name}").read_text()
+        if "Document" not in file_content:
             continue
-        model = _.removesuffix(".py")
-        models.append({"name": model, "included": model in included_models})
 
-    modules.sort(key=lambda x: os.path.getctime(f"src/modules/{x['name']}"), reverse=True)
-    models.sort(key=lambda x: os.path.getctime(f"src/storages/mongo/{x['name']}.py"), reverse=True)
-
-    return modules, models
-
-
-def new_router_func(module_name: str | None = None, model_name: str | None = None):
-    """
-    "New router" Option:
-    1. Prompt user to enter the name of module to add router.
-    2. Create a new "src/modules/{module_name}/routes.py" file or abort if already exists.
-    3. Also, include created router to application in the "src/api/app.py" file.
-    """
-    ROUTER_TEMPLATE = (TEMPLATES_PATH / "router").read_text()
-    ROUTER_WITH_BASIC_ROUTES_TEMPLATE = (TEMPLATES_PATH / "router_with_basic_routes").read_text()
-
-    modules, models = list_modules_and_models()
-
-    if module_name is None:
-        module_name = as_identifier(input("Enter the name of the module: "))
-    path = Path(f"src/modules/{module_name}/routes.py")
-
-    if path.exists():
-        print(f"Router file for {module_name} already exists.")
-        return
-
-    def _code(_model_name):
-        if _model_name:
-            return (
-                ROUTER_WITH_BASIC_ROUTES_TEMPLATE.replace("{module_name}", module_name)
-                .replace("{ModuleName}", to_camel_case(module_name))
-                .replace("{model_name}", _model_name)
-                .replace("{ModelName}", to_camel_case(_model_name))
-            )
-        return ROUTER_TEMPLATE.replace("{module_name}", module_name).replace("{ModuleName}", to_camel_case(module_name))
-
-    def preview1(model_name):
-        if model_name == "SKIP":
-            content = _code(None)
-        else:
-            content = _code(model_name)
-        highlighted_content = highlight(content, PY_LEXER, FORMATTER)
-        return highlighted_content
-
-    if model_name is None:
-        # request model_name to also implement CRUD routes
-        terminal_menu = TerminalMenu(
-            ["SKIP"] + [m["name"] for m in models],
-            title="Select a model to implement basic routes or skip:",
-            preview_title="Router Implementation",
-            preview_command=preview1,
-            **DEFAULT_TERM_MENU,
+        model = file_name.removesuffix(".py")
+        models_info.append(
+            {
+                "name": model,
+                "included": model in included_models,
+            }
         )
-        menu_entry_index = terminal_menu.show()
-        model_name = as_identifier(models[menu_entry_index - 1]["name"]) if menu_entry_index > 0 else None
 
-    def preview2(x):
-        if x == "Yes":
-            content = _code(model_name)
-            highlighted_content = highlight(content, PY_LEXER, FORMATTER)
-            return highlighted_content
+    # Sort them by creation time (newest first)
+    modules_info.sort(key=lambda x: os.path.getctime(f"src/modules/{x['name']}"), reverse=True)
+    models_info.sort(key=lambda x: os.path.getctime(f"src/storages/mongo/{x['name']}.py"), reverse=True)
 
-    # request approval to create the module
-    terminal_menu = TerminalMenu(
-        ["Yes", "No"],
-        title=f'Will be created File "{path}" and the router will be included in "{APP_PATH}"',
-        preview_title=f'File "{path}"',
-        preview_command=preview2,
-        **DEFAULT_TERM_MENU,
-    )
-    menu_entry_index = terminal_menu.show()
-
-    if menu_entry_index == 0:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(ruff_format(_code(model_name)))
-        (path.parent / "__init__.py").touch()
-        include_router_func(module_name)
-        return module_name
-    else:
-        print("Aborted")
-        return
+    return modules_info, models_info
 
 
-def include_router_func(module_name: str | None = None):
+# ------------------------------------------------------------------------------
+# Command Implementations
+# ------------------------------------------------------------------------------
+def include_router_func(module_name: str | None = None) -> str | None:
     """
     "Include Router" Option:
-    1. Prompt user to choose router from the list of available routers to include.
-    2. Include provided router to application in "src/api/app.py" file.
+    1. Prompt user to choose router from the list of available modules to include.
+    2. Add the router import + app.include_router(...) to "src/api/app.py".
     """
     app_py_lines = APP_PATH.read_text().splitlines()
 
+    # Locate anchor comment for insertion in app.py
+    anchor_comment = "# Import routers above and include them below [do not edit this comment]"
     try:
-        target_comment = "# Import routers above and include them below [do not edit this comment]"
-        target_index = app_py_lines.index(target_comment)
+        anchor_index = app_py_lines.index(anchor_comment)
     except ValueError:
-        print("Cannot find the place to include routers")
-        return
+        print("Cannot find the place to include routers in app.py.")
+        return None
 
-    modules, models = list_modules_and_models()
+    modules_info, _models_info = list_modules_and_models()
 
-    def new_app_py(_module_name: str):
-        # insert new router to the end of the list
-        import_router = f"from src.modules.{_module_name}.routes import router as router_{_module_name}  # noqa: E402"
-        _include_router = f"app.include_router(router_{_module_name})"
+    def updated_app_py_lines(_module: str) -> list[str]:
+        """
+        Generate the new content of app.py with router import
+        and `app.include_router(...)` appended/inserted.
+        """
+        # For display, remove the suffix if it was chosen as "(already included)"
+        base_module_name = _module.removesuffix(" (already included)")
 
-        new_app_py_lines = app_py_lines.copy()
-        new_app_py_lines.insert(target_index - 1, import_router)
-        target_include_router_index = target_index + 2
-        for i, line in enumerate(new_app_py_lines[target_index:], start=target_index):
+        import_router_line = (
+            f"from src.modules.{base_module_name}.routes import router as router_{base_module_name}  # noqa: E402"
+        )
+        include_router_line = f"app.include_router(router_{base_module_name})"
+
+        lines_copy = app_py_lines[:]
+        # Insert the import line just above the anchor index
+        lines_copy.insert(anchor_index - 1, import_router_line)
+
+        # Find a good place to insert the include line
+        # (directly after other include_router lines).
+        insert_idx_for_include = anchor_index + 2
+        for i, line in enumerate(lines_copy[anchor_index:], start=anchor_index):
             if line.startswith("app.include_router("):
-                target_include_router_index = i + 1
+                insert_idx_for_include = i + 1
 
-        new_app_py_lines.insert(target_include_router_index, _include_router)
-        return new_app_py_lines
+        lines_copy.insert(insert_idx_for_include, include_router_line)
+        return lines_copy
 
-    def preview(_module_name: str):
-        new_app_py_lines = new_app_py(_module_name.removesuffix(" (already included)"))
-        new_target_comment_index = new_app_py_lines.index(target_comment)
-        view_section = new_app_py_lines[new_target_comment_index - 5 : new_target_comment_index + 5]
-        preview_content = "\n".join(view_section)
-        highlighted_preview_content = highlight(preview_content, PY_LEXER, FORMATTER)
-        return highlighted_preview_content
+    def preview_module_chosen(selected_module: str) -> str:
+        """Preview snippet around the anchor in app.py after insertion."""
+        new_lines = updated_app_py_lines(selected_module)
+        try:
+            new_anchor_index = new_lines.index(anchor_comment)
+            snippet_start = max(0, new_anchor_index - 5)
+            snippet_end = min(len(new_lines), new_anchor_index + 5)
+            preview_content = "\n".join(new_lines[snippet_start:snippet_end])
+        except ValueError:
+            # Fallback snippet if anchor not found
+            preview_content = "\n".join(new_lines[-10:])
+        return highlight_preview(preview_content)
 
     if module_name is None:
-        modules_with_router = [m for m in modules if m["routes"]]
+        # Filter modules that have a router file
+        modules_with_routers = [m for m in modules_info if m["routes"]]
+
+        # Build items for the TerminalMenu
+        menu_items = [
+            f"{m['name']} (already included)" if m["router_included"] else m["name"] for m in modules_with_routers
+        ]
+
         terminal_menu = TerminalMenu(
-            [f"{m['name']} (already included)" if m["router_included"] else m["name"] for m in modules_with_router],
-            title="Select an module:",
-            preview_title=f'File "{APP_PATH}"',
-            preview_command=preview,
+            menu_items,
+            title="Select a module to include its router:",
+            preview_title=f'File "{APP_PATH}" preview',
+            preview_command=preview_module_chosen,
             **DEFAULT_TERM_MENU,
         )
-        menu_entry_index = terminal_menu.show()
-        module_name = modules_with_router[menu_entry_index]["name"]
+        menu_index = terminal_menu.show()
+        if menu_index is None or menu_index < 0:
+            # User pressed ESC, etc.
+            return None
 
-    new_app_py_content = "\n".join(new_app_py(module_name))
+        chosen_module_name = modules_with_routers[menu_index]["name"]
+        module_name = chosen_module_name
+    else:
+        # We came here with module_name explicitly
+        pass
 
-    APP_PATH.write_text(ruff_format(new_app_py_content))
+    # Write the new app.py
+    updated_lines = updated_app_py_lines(module_name)
+    new_content = ruff_format("\n".join(updated_lines))
+    APP_PATH.write_text(new_content)
+
     return module_name
 
 
-def new_model_func():
+def new_router_func(module_name: str | None = None, model_name: str | None = None) -> str | None:
+    """
+    "New router" Option:
+    1. Prompt user for a module name if not provided.
+    2. Create "src/modules/{module_name}/routes.py" (or abort if file exists).
+    3. If user chooses a model, generate basic CRUD route scaffolding.
+    4. Include the created router in "src/api/app.py".
+    """
+    ROUTER_TEMPLATE = load_template("router")
+    ROUTER_WITH_CRUD_TEMPLATE = load_template("router_with_basic_routes")
+
+    modules_info, models_info = list_modules_and_models()
+
+    if module_name is None:
+        module_name = as_identifier(input("Enter the name of the module: ").strip())
+
+    path = Path(f"src/modules/{module_name}/routes.py")
+    if path.exists():
+        print(f"Router file for module '{module_name}' already exists.")
+        return None
+
+    def build_router_code(_model_name: str | None) -> str:
+        """Return the router code based on user choice to skip or include CRUD."""
+        if _model_name is None:
+            return ROUTER_TEMPLATE.replace("{module_name}", module_name).replace(
+                "{ModuleName}", to_camel_case(module_name)
+            )
+        return (
+            ROUTER_WITH_CRUD_TEMPLATE.replace("{module_name}", module_name)
+            .replace("{ModuleName}", to_camel_case(module_name))
+            .replace("{model_name}", _model_name)
+            .replace("{ModelName}", to_camel_case(_model_name))
+        )
+
+    def preview_model_choice(m: str) -> str:
+        """Preview the router file if a certain model is selected."""
+        selected_model = None if m == "SKIP" else m
+        content = build_router_code(selected_model)
+        return highlight_preview(content)
+
+    # If model_name was not given, ask the user (optionally skip)
+    if model_name is None:
+        terminal_menu = TerminalMenu(
+            ["SKIP"] + [m["name"] for m in models_info],
+            title="Select a model to implement basic routes or skip:",
+            preview_title="Router Implementation Preview",
+            preview_command=preview_model_choice,
+            **DEFAULT_TERM_MENU,
+        )
+        menu_index = terminal_menu.show()
+        if menu_index is None or menu_index < 0:
+            print("Aborted creating router.")
+            return None
+
+        if menu_index == 0:
+            chosen_model = None
+        else:
+            chosen_model = as_identifier(models_info[menu_index - 1]["name"])
+        model_name = chosen_model
+
+    def final_preview_decision(_: str) -> str:
+        """Preview content that will be written if user says 'Yes'."""
+        return highlight_preview(build_router_code(model_name))
+
+    # Final approval
+    confirm_menu = TerminalMenu(
+        ["Yes", "No"],
+        title=f'Create router file "{path}" and include it in "{APP_PATH}"?',
+        preview_title=f'File "{path}" preview',
+        preview_command=final_preview_decision,
+        **DEFAULT_TERM_MENU,
+    )
+    confirm_idx = confirm_menu.show()
+
+    if confirm_idx == 0:  # Yes
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(ruff_format(build_router_code(model_name)))
+        (path.parent / "__init__.py").touch()
+
+        # Include this router in app.py
+        include_router_func(module_name)
+        return module_name
+    else:
+        print("Aborted creating new router.")
+        return None
+
+
+def new_model_func() -> str | None:
     """
     "New model" Option:
-    1. Prompt user to enter the name of the model.
-    2. Create a new "src/storages/mongo/{model_name}.py" file or abort if already exists.
-    3. Also, include the created model in the "src/storages/mongo/__init__.py" file.
-    4. Suggest to "Implement CRUD+" and "New router" for the model.
+    1. Ask user for the model name.
+    2. Create "src/storages/mongo/{model_name}.py".
+    3. Include the created model in "src/storages/mongo/__init__.py".
+    4. Optionally implement CRUD and create a new router for this model.
     """
-    MODEL_TEMPLATE = (TEMPLATES_PATH / "model").read_text()
+    MODEL_TEMPLATE = load_template("model")
 
-    model_name = as_identifier(input("Enter the name of the model (in singular form): "))
+    model_input = input("Enter the name of the model (in singular form): ").strip()
+    model_name = as_identifier(model_input)
     ModelName = to_camel_case(model_name)
     path = Path(f"src/storages/mongo/{model_name}.py")
 
     if path.exists():
-        print(f"Model file for {model_name} already exists.")
-        return
+        print(f"Model file for '{model_name}' already exists.")
+        return None
 
-    def preview(x):
-        if x == "Yes":
-            content = ruff_format(MODEL_TEMPLATE.replace("{ModelName}", ModelName))
-            highlighted_content = highlight(content, PY_LEXER, FORMATTER)
-            return highlighted_content
+    def preview_model_creation(_: str) -> str:
+        """Show a preview of the new model file."""
+        content = MODEL_TEMPLATE.replace("{ModelName}", ModelName)
+        return highlight_preview(ruff_format(content))
 
-    # Request approval
-    terminal_menu = TerminalMenu(
+    # Confirm creation
+    confirm_menu = TerminalMenu(
         ["Yes", "No"],
-        title=f'Will be created File "{path}" and the model will be included in "{MODELS_REGISTRY_PATH}"',
-        preview_title=f'File "{path}"',
-        preview_command=preview,
+        title=f'Create new model file "{path}" and update registry "{MODELS_REGISTRY_PATH}"?',
+        preview_title=f'File "{path}" preview',
+        preview_command=preview_model_creation,
         **DEFAULT_TERM_MENU,
     )
-    menu_entry_index = terminal_menu.show()
+    choice_idx = confirm_menu.show()
 
-    if menu_entry_index == 0:
+    if choice_idx == 0:  # Yes
         # Create the model file
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(ruff_format(MODEL_TEMPLATE.replace("{ModelName}", ModelName)))
+        content = MODEL_TEMPLATE.replace("{ModelName}", ModelName)
+        path.write_text(ruff_format(content))
 
-        # Include the model in the registry
+        # Insert import into models registry
         if not MODELS_REGISTRY_PATH.exists():
-            print(f'Registry file "{MODELS_REGISTRY_PATH}" not found.')
-            return
+            print(f'Registry file "{MODELS_REGISTRY_PATH}" not found. Skipping registry update.')
+            return model_name
 
-        code = MODELS_REGISTRY_PATH.read_text()
-        code = f"from src.storages.mongo.{model_name} import {ModelName}\n" + code  # just add to the top
-        tree = ast.parse(code)
+        registry_code = MODELS_REGISTRY_PATH.read_text()
+        registry_code = f"from src.storages.mongo.{model_name} import {ModelName}\n" + registry_code
+        tree = ast.parse(registry_code)
 
-        class Modifier(ast.NodeTransformer):
-            def visit_Assign(self, node):
-                """Find the assignment to 'document_models' and modify the list."""
+        class RegistryModifier(ast.NodeTransformer):
+            """Append the model to the `document_models` list if it exists."""
+
+            def visit_Assign(self, node: ast.Assign) -> ast.Assign:
                 if any(isinstance(target, ast.Name) and target.id == "document_models" for target in node.targets):
-                    if isinstance(node.value, ast.Call) and isinstance(node.value.args[1], ast.List):
-                        # Append a string to the list
+                    if (
+                        isinstance(node.value, ast.Call)
+                        and len(node.value.args) >= 2
+                        and isinstance(node.value.args[1], ast.List)
+                    ):
                         node.value.args[1].elts.append(ast.Name(id=ModelName, ctx=ast.Load()))
                 return node
 
-        modified_tree = Modifier().visit(tree)
+        modified_tree = RegistryModifier().visit(tree)
         modified_code = astor.to_source(modified_tree)
         modified_code = ruff_format(modified_code)
         MODELS_REGISTRY_PATH.write_text(modified_code)
 
-        terminal_menu = TerminalMenu(
+        # Ask if user wants to create a router with basic routes
+        router_menu = TerminalMenu(
             ["Yes", "No"],
-            title="Do you want to create router with basic routes?",
+            title="Do you want to create a router with basic routes for this model?",
             **DEFAULT_TERM_MENU,
         )
-        menu_entry_index = terminal_menu.show()
-        if menu_entry_index == 0:
-            module_name = input(f"Enter the name of the module where to add router [`{model_name}` on empty]: ")
-            if not module_name:
-                module_name = model_name
-            module_name = as_identifier(module_name)
-            implement_crud_func(model_name=model_name, module_name=module_name)
-            new_router_func(model_name=model_name, module_name=module_name)
+        router_choice = router_menu.show()
+
+        if router_choice == 0:  # Yes
+            mod_name = input(
+                f"Enter the name of the module to place the router [Press Enter to use '{model_name}']: "
+            ).strip()
+            if not mod_name:
+                mod_name = model_name
+            mod_name = as_identifier(mod_name)
+
+            # Also ask if user wants to implement a crud.py
+            implement_crud_func(model_name=model_name, module_name=mod_name)
+            new_router_func(module_name=mod_name, model_name=model_name)
 
         return model_name
     else:
-        print("Aborted")
-        return
+        print("Aborted model creation.")
+        return None
 
 
-def implement_crud_func(model_name: str | None = None, module_name: str | None = None):
+def implement_crud_func(model_name: str | None = None, module_name: str | None = None) -> str | None:
     """
     "Implement CRUD+ repository" Option:
-    1. Choose model from the list to implement operations for that model.
-    2. Choose module where to add operations.
-    3. Create the "src/modules/{module_name}/crud.py" file or abort if already exists.
-    4. Write operations to the crud.py file.
+    1. Choose model if not specified.
+    2. Choose module if not specified (with an option to create a new module).
+    3. Create "src/modules/{module_name}/crud.py" with basic CRUD+ functions.
     """
-    CRUD_TEMPLATE = (TEMPLATES_PATH / "crud").read_text()
+    CRUD_TEMPLATE = load_template("crud")
+    modules_info, models_info = list_modules_and_models()
 
-    modules, models = list_modules_and_models()
+    def preview_model(m: str) -> str:
+        """Show CRUD code snippet that will be generated."""
+        content = CRUD_TEMPLATE.replace("{ModelName}", to_camel_case(m)).replace("{model_name}", m)
+        return highlight_preview(content)
 
-    def preview1(_model_name: str):
-        content = CRUD_TEMPLATE.replace("{ModelName}", to_camel_case(_model_name)).replace("{model_name}", _model_name)
-        highlighted_content = highlight(content, PY_LEXER, FORMATTER)
-        return highlighted_content
-
+    # Step 1: If model_name is not provided, choose from the models
     if model_name is None:
         terminal_menu = TerminalMenu(
-            [m["name"] for m in models],
-            title="Select a model for which operations will be implemented:",
-            preview_title="CRUD+ Implementation",
-            preview_command=preview1,
-            **DEFAULT_TERM_MENU,
-        )
-        menu_entry_index = terminal_menu.show()
-        model_name = models[menu_entry_index]["name"]
-
-    if module_name is None:
-        terminal_menu = TerminalMenu(
-            [f"{m['name']} (with crud)" if m["crud"] else m["name"] for m in modules],
-            title="Select a module to include crud:",
-            **DEFAULT_TERM_MENU,
-        )
-        menu_entry_index = terminal_menu.show()
-        module_name = modules[menu_entry_index]["name"]
-
-    path = Path(f"src/modules/{module_name}/crud.py")
-
-    if path.exists():
-        print(f"CRUD file for {module_name} already exists.")
-        return
-
-    def preview2(x):
-        if x == "Yes":
-            content = CRUD_TEMPLATE.replace("{ModelName}", to_camel_case(model_name)).replace(
-                "{model_name}", model_name
-            )
-            highlighted_content = highlight(content, PY_LEXER, FORMATTER)
-            return highlighted_content
-
-    terminal_menu = TerminalMenu(
-        ["Yes", "No"],
-        title=f'Will be created File "{path}"',
-        preview_title=f'File "{path}"',
-        preview_command=preview2,
-        **DEFAULT_TERM_MENU,
-    )
-
-    menu_entry_index = terminal_menu.show()
-
-    if menu_entry_index == 0:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            ruff_format(
-                CRUD_TEMPLATE.replace("{ModelName}", to_camel_case(model_name)).replace("{model_name}", model_name)
-            )
-        )
-        (path.parent / "__init__.py").touch()
-        return module_name
-    else:
-        print("Aborted")
-        return
-
-
-def delete_module(module_name: str | None = None):
-    """
-    "Delete module" Option:
-    1. Prompt the user to choose a module to delete (if not given).
-    2. Show all references to this module found in the entire codebase.
-    3. Ask for confirmation.
-    4. Remove references from src/api/app.py (router import + app.include_router).
-    5. Delete the module folder.
-    6. Warn user that other references may need manual cleanup.
-    """
-    modules, _ = list_modules_and_models()
-
-    # If there are no modules, just exit
-    if not modules:
-        print("No modules found to delete.")
-        return
-
-    module_names = [m["name"] for m in modules]
-    if not module_name:
-        # Let user pick from the existing modules
-        def preview(m: str):
-            # We won't do a fancy multi-file preview here, just docstring or prompt
-            return f"Selected module: {m}"
-
-        terminal_menu = TerminalMenu(
-            module_names,
-            title="Select a module to delete:",
-            preview_title="Confirmation",
-            preview_command=preview,
+            [m["name"] for m in models_info],
+            title="Select a model for CRUD+ implementation:",
+            preview_title="CRUD Implementation Preview",
+            preview_command=preview_model,
             **DEFAULT_TERM_MENU,
         )
         idx = terminal_menu.show()
-        module_name = module_names[idx]
+        if idx is None:
+            print("Aborted CRUD+ implementation.")
+            return None
+        model_name = models_info[idx]["name"]
 
-    elif module_name not in module_names:
-        print(f"Module '{module_name}' not found in src/modules/.")
+    # Step 2: If module_name is not provided, choose from the modules
+    if module_name is None:
+        # Add a "create new module" option to the existing modules list
+        menu_items = [(f"{m['name']} (already has crud.py)" if m["crud"] else m["name"]) for m in modules_info]
+        menu_items.append("Create new module")
+
+        terminal_menu = TerminalMenu(
+            menu_items,
+            title="Select a module to place crud.py:",
+            **DEFAULT_TERM_MENU,
+        )
+        idx = terminal_menu.show()
+        if idx is None:
+            print("Aborted CRUD+ implementation.")
+            return None
+
+        if idx == len(menu_items) - 1:
+            # User chose "Create new module"
+            new_module_name = input("Enter the new module name: ").strip()
+            new_module_name = as_identifier(new_module_name)
+            target_dir = Path(f"src/modules/{new_module_name}")
+            if target_dir.exists():
+                print(f"Module '{new_module_name}' already exists. Aborting.")
+                return None
+
+            # Create the new module folder and __init__.py
+            target_dir.mkdir(parents=True, exist_ok=True)
+            (target_dir / "__init__.py").touch()
+            module_name = new_module_name
+        else:
+            # Chose an existing module
+            module_name = modules_info[idx]["name"]
+
+    # Step 3: Create the CRUD file
+    path = Path(f"src/modules/{module_name}/crud.py")
+    if path.exists():
+        print(f"CRUD file for module '{module_name}' already exists.")
+        return None
+
+    def preview_final(_: str) -> str:
+        """Show final CRUD content to be created."""
+        content = CRUD_TEMPLATE.replace("{ModelName}", to_camel_case(model_name)).replace("{model_name}", model_name)
+        return highlight_preview(content)
+
+    confirm_menu = TerminalMenu(
+        ["Yes", "No"],
+        title=f'Create file "{path}" with CRUD+ implementation?',
+        preview_title=f'File "{path}" preview',
+        preview_command=preview_final,
+        **DEFAULT_TERM_MENU,
+    )
+    choice_idx = confirm_menu.show()
+
+    if choice_idx == 0:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        content = CRUD_TEMPLATE.replace("{ModelName}", to_camel_case(model_name)).replace("{model_name}", model_name)
+        path.write_text(ruff_format(content))
+        (path.parent / "__init__.py").touch()
+        return module_name
+    else:
+        print("Aborted CRUD+ creation.")
+        return None
+
+
+def delete_module(module_name: str | None = None) -> None:
+    """
+    "Delete module" Option:
+    1. Prompt user to choose a module to delete (if not given).
+    2. Show references to this module found in entire codebase.
+    3. Ask for confirmation.
+    4. Remove references from src/api/app.py (router import + app.include_router).
+    5. Delete the module folder.
+    6. Advise user to remove leftover references manually if needed.
+    """
+    modules_info, _ = list_modules_and_models()
+
+    if not modules_info:
+        print("No modules found to delete.")
         return
 
-    # Find references to this module in the entire project
+    module_names = [m["name"] for m in modules_info]
+
+    if not module_name:
+        menu = TerminalMenu(
+            module_names,
+            title="Select a module to delete:",
+            **DEFAULT_TERM_MENU,
+        )
+        idx = menu.show()
+        if idx is None:
+            print("Aborted module deletion.")
+            return
+        module_name = module_names[idx]
+    else:
+        if module_name not in module_names:
+            print(f"Module '{module_name}' not found in 'src/modules/'.")
+            return
+
+    # Find references to this module across the project
     references = []
-    for root, dirs, files in os.walk(BASE_DIR):
-        # Optionally skip hidden, venv, etc.:
-        # if "venv" in dirs: dirs.remove("venv")
+    for root, _dirs, files in os.walk(BASE_DIR):
         for file in files:
             if file.endswith(".py"):
                 file_path = Path(root) / file
                 try:
                     lines = file_path.read_text().splitlines()
                 except UnicodeDecodeError:
-                    continue  # skip non-text or problematic files
+                    continue  # skip unreadable files
 
                 for i, line in enumerate(lines, start=1):
-                    # A naive way to check references:
                     if f"src.modules.{module_name}" in line:
                         references.append((file_path, i, line.strip()))
 
-    # Build a preview string of references found
+    # Build reference preview
     if references:
-        ref_preview = ["References found in project:\n"]
-        for ref_file, ref_line_no, ref_line in references:
-            ref_preview.append(f"- {ref_file.relative_to(BASE_DIR)} (line {ref_line_no}): {ref_line}")
-        ref_preview_str = "\n".join(ref_preview)
+        ref_lines = ["References found in project:\n"]
+        for ref_file, line_no, text in references:
+            ref_lines.append(f"- {ref_file.relative_to(BASE_DIR)} (line {line_no}): {text}")
+        ref_preview_str = "\n".join(ref_lines)
     else:
-        ref_preview_str = "No direct references found apart from potential router usage in app.py.\n"
+        ref_preview_str = "No direct references found, except possibly in app.py.\n"
 
-    # We'll do a second pass to see if "src/api/app.py" includes a router import
+    # Check for references in app.py specifically (router import, etc.)
     app_py_lines = APP_PATH.read_text().splitlines()
     import_line_idx = None
     include_line_idx = None
+
     for i, line in enumerate(app_py_lines):
         if f"from src.modules.{module_name}.routes import router as router_{module_name}" in line:
             import_line_idx = i
         if f"app.include_router(router_{module_name})" in line:
             include_line_idx = i
 
-    def preview_delete(_):
+    def preview_deletion(_: str) -> str:
         return (
             f"You are about to delete the module '{module_name}'.\n\n"
             + ref_preview_str
-            + "\n\nPress ENTER on 'Yes' to proceed, or 'No' to abort."
+            + "\nPress ENTER on 'Yes' to proceed, or 'No' to abort."
         )
 
-    # Ask user for confirmation
+    # Confirm
     confirm_menu = TerminalMenu(
         ["Yes", "No"],
         title=f"Delete module '{module_name}'?",
-        preview_command=preview_delete,
+        preview_command=preview_deletion,
         preview_title="Module Deletion Confirmation",
         **DEFAULT_TERM_MENU,
     )
-    choice = confirm_menu.show()
+    choice_idx = confirm_menu.show()
 
-    if choice == 0:  # Yes
-        # Remove references in app.py
+    if choice_idx == 0:
+        # Remove references from app.py
         changed_app_py = False
-        new_app_py_lines = app_py_lines.copy()
+        new_app_py_lines = app_py_lines[:]
 
-        # Remove router import line
         if import_line_idx is not None:
             new_app_py_lines[import_line_idx] = ""
+            changed_app_py = True
 
-        # Remove app.include_router line
         if include_line_idx is not None:
             new_app_py_lines[include_line_idx] = ""
-        if import_line_idx is not None or include_line_idx is not None:
             changed_app_py = True
 
         if changed_app_py:
-            # Filter out empty lines if you want, or leave them as blank
-            filtered_app_py_lines = [line for line in new_app_py_lines if line.strip() != ""]
-            updated_content = ruff_format("\n".join(filtered_app_py_lines) + "\n")
-            APP_PATH.write_text(updated_content)
+            filtered = [line for line in new_app_py_lines if line.strip() != ""]
+            updated = ruff_format("\n".join(filtered) + "\n")
+            APP_PATH.write_text(updated)
 
-        # Finally, remove the module folder
+        # Remove the module folder
         target_dir = Path("src/modules") / module_name
         if target_dir.exists() and target_dir.is_dir():
             shutil.rmtree(target_dir)
@@ -524,34 +662,43 @@ def delete_module(module_name: str | None = None):
         else:
             print(f"Module directory '{target_dir}' does not exist or is not a directory.")
 
-        print(
-            "Module deletion completed. If there were other references shown above, "
-            "please remove them manually if needed."
-        )
+        print("Module deletion completed. Check references above to remove if needed.")
     else:
         print("Aborted module deletion.")
 
 
-def main():
+# ------------------------------------------------------------------------------
+# Main CLI
+# ------------------------------------------------------------------------------
+def main() -> None:
+    """Script entry point: Display a menu of available actions."""
     options = ["New model", "Implement CRUD+ repository", "New router", "Delete module"]
 
-    def preview(x):
-        if x == "New router":
-            return cleandoc(new_router_func.__doc__)
-        elif x == "Include Router":
-            return cleandoc(include_router_func.__doc__)
-        elif x == "New model":
-            return cleandoc(new_model_func.__doc__)
-        elif x == "Implement CRUD+ repository":
-            return cleandoc(implement_crud_func.__doc__)
-        elif x == "Delete module":
-            return cleandoc(delete_module.__doc__)
+    doc_map = {
+        "New model": cleandoc(new_model_func.__doc__ or ""),
+        "Implement CRUD+ repository": cleandoc(implement_crud_func.__doc__ or ""),
+        "New router": cleandoc(new_router_func.__doc__ or ""),
+        "Delete module": cleandoc(delete_module.__doc__ or ""),
+    }
 
-    terminal_menu = TerminalMenu(
-        options, title="Select an option:", preview_command=preview, preview_title="Description", **DEFAULT_TERM_MENU
+    def preview(option: str) -> str:
+        """Show docstring of the chosen command as a preview."""
+        return doc_map.get(option, "No documentation available")
+
+    menu = TerminalMenu(
+        options,
+        title="Select an option:",
+        preview_command=preview,
+        preview_title="Description",
+        **DEFAULT_TERM_MENU,
     )
-    menu_entry_index = terminal_menu.show()
-    choice = options[menu_entry_index]
+    choice_idx = menu.show()
+    if choice_idx is None or choice_idx < 0:
+        print("No option selected. Exiting.")
+        return
+
+    choice = options[choice_idx]
+
     if choice == "New model":
         new_model_func()
     elif choice == "Implement CRUD+ repository":
@@ -561,7 +708,7 @@ def main():
     elif choice == "Delete module":
         delete_module()
     else:
-        raise ValueError("Unknown option")
+        raise ValueError(f"Unknown option selected: {choice}")
 
 
 if __name__ == "__main__":
