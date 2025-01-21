@@ -6,8 +6,8 @@ from src.modules.user.repository import user_repository
 from src.modules.user.schemas import ViewUser
 
 router = APIRouter(
-    prefix="/users",
-    tags=["Users"],
+    prefix="/user",
+    tags=["User"],
     responses={
         **IncorrectCredentialsException.responses,
     },
