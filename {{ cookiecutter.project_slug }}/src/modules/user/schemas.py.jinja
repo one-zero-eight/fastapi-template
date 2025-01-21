@@ -12,6 +12,9 @@ class CreateUser(BaseSchema):
     login: str
     password: str
     {%- endif %}
+    {%- if not cookiecutter.innohassle_accounts and not cookiecutter.login_and_password %}
+    pass
+    {%- endif %}
 
 
 class ViewUser(BaseSchema):
