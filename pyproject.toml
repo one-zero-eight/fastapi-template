@@ -40,6 +40,12 @@ bcrypt = "^4.2.1"
 itsdangerous = "^2.2.0"
 passlib = "^1.7.4"
 
+[tool.ruff]
+line-length = 120
+lint.ignore = ["PLR"]
+lint.extend-select = ["I", "UP", "PL"]
+target-version = "py312"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
