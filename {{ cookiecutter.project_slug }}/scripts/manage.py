@@ -9,8 +9,6 @@ from pathlib import Path
 import astor
 import simple_term_menu
 from pygments import formatters, highlight, lexers
-from pygments.style import Style
-from pygments.token import Text
 from simple_term_menu import TerminalMenu
 
 BASE_DIR = Path(__file__).resolve().parents[1]
