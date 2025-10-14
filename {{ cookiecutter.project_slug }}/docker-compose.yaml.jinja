@@ -1,54 +1,39 @@
+# This is a Docker Compose configuration for local use.
+
+# Run all services:
+# docker compose up --build --wait
+
 services:
   api:
     build: .
-    volumes:
-      - "./settings.yaml:/code/settings.yaml:ro" # Read-only settings file
+    restart: no
     depends_on:
       db:
         condition: service_healthy
-    restart: always
     ports:
       - "8000:8000"
-  {% if cookiecutter.database == "postgres" %}
-  db:
-    # See more: https://hub.docker.com/_/postgres
-    image: "postgres:17.1"
-    restart: always
-    # The commits were slow on our servers, so we turned off the synchronous_commit
-    command: postgres -c synchronous_commit=off
     volumes:
-      - "postgres:/var/lib/postgresql/data"
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-  {% elif cookiecutter.database == "mongo" %}
+      - "./settings.yaml:/code/settings.yaml:ro" # Read-only settings file
+  {% if cookiecutter.database == "mongo" %}
   db:
     # See more: https://registry.hub.docker.com/_/mongo
     image: "mongo:8.0"
-    restart: always
-    volumes:
-      - "mongodb:/data/db"
+    restart: no
     ports:
       - "27017:27017"
+    volumes:
+      - "mongodb:/data/db"
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/db --quiet
-      interval: 5s
+      test: echo 'db.runCommand("ping").ok' | mongosh 127.0.0.1:27017/db --quiet
       timeout: 5s
-      retries: 5
+      start_period: 30s
+      interval: 1m
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-mongoadmin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-secret}
   {% endif %}
 
 volumes:
-  {% if cookiecutter.database == "postgres" -%}
-  postgres:
-  {%- elif cookiecutter.database == "mongo" -%}
+  {% if cookiecutter.database == "mongo" -%}
   mongodb:
   {%- endif %}

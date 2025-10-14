@@ -3,12 +3,8 @@
 
 # Except code
 !/src/
-!/deploy/
-!/alembic/
-!/alembic.ini
 !/pyproject.toml
-!/poetry.lock
-!logging.yaml
+!/uv.lock
 
 # And ignore cache files in the code
 __pycache__

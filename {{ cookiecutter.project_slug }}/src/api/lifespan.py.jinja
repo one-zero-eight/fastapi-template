@@ -1,37 +1,4 @@
-{%- if cookiecutter.database == "postgres" -%}
-__all__ = ["lifespan"]
-
-from contextlib import asynccontextmanager
-
-from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import create_async_engine
-
-from src.config import settings
-
-
-async def setup_repositories():
-    import src.storages.sql.storage
-
-    async_engine = create_async_engine(settings.database_uri.get_secret_value())
-    storage = src.storages.sql.storage.SQLAlchemyStorage(async_engine)
-    src.storages.sql.storage.storage = storage
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await setup_repositories()
-    {%- if cookiecutter.innohassle_accounts %}
-
-    from src.modules.innohassle_accounts import innohassle_accounts  # noqa: E402
-
-    await innohassle_accounts.update_key_set()
-    {%- endif %}
-    yield
-    from src.storages.sql.storage import storage
-
-    await storage.close_connection()
-
-{%- elif cookiecutter.database == "mongo" -%}
+{%- if cookiecutter.database == "mongo" -%}
 __all__ = ["lifespan"]
 
 import asyncio
@@ -60,13 +27,12 @@ async def setup_database() -> AsyncIOMotorClient:
 
     # healthcheck mongo
     try:
-        with timeout(2):
+        with timeout(1):
             server_info = await motor_client.server_info()
-            server_info_pretty_text = json.dumps(server_info, indent=2, default=str)
-            logger.info(f"Connected to MongoDB: {server_info_pretty_text}")
+            vesion = server_info["version"]
+            logger.info(f"Connected to MongoDB v{vesion}")
     except ConnectionFailure as e:
         logger.critical(f"Could not connect to MongoDB: {e}")
-        raise e
 
     mongo_db = motor_client.get_database()
     await init_beanie(database=mongo_db, document_models=document_models, recreate_views=True)
@@ -79,9 +45,9 @@ async def lifespan(_app: FastAPI):
     motor_client = await setup_database()
     {%- if cookiecutter.innohassle_accounts %}
 
-    from src.modules.innohassle_accounts import innohassle_accounts  # noqa: E402
+    from src.modules.inh_accounts_sdk import inh_accounts  # noqa: E402
 
-    await innohassle_accounts.update_key_set()
+    await inh_accounts.update_key_set()
     {%- endif %}
     yield
 
@@ -97,9 +63,10 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     {%- if cookiecutter.innohassle_accounts %}
-    from src.modules.innohassle_accounts import innohassle_accounts  # noqa: E402
 
-    await innohassle_accounts.update_key_set()
+    from src.modules.inh_accounts_sdk import inh_accounts  # noqa: E402
+
+    await inh_accounts.update_key_set()
     {%- endif %}
     yield
 {%- endif %}

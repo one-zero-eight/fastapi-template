@@ -70,144 +70,7 @@ def ensure_pre_commit_hooks():
             f"❌ Error setting up pre-commit hooks:\n{e.stderr}\n  Please, setup it manually with `poetry run pre-commit install --install-hooks -t pre-commit -t commit-msg`"
         )
 
-{%- if cookiecutter.innohassle_accounts %}
-
-
-def check_and_prompt_api_jwt_token():
-    """
-    Check if `accounts.api_jwt_token` is set in `settings.yaml`.
-    Prompt the user to set it if it is missing, allow them to input it,
-    and open the required URL in the default web browser.
-    """
-    import webbrowser
-
-    ACCOUNTS_TOKEN_URL = (
-        "https://api.innohassle.ru/accounts/v0/tokens/"
-        "generate-service-token?sub=local-dev&scopes=users&only_for_me=true"
-    )
-    settings = get_settings()
-    accounts = settings.get("accounts", {})
-    api_jwt_token = accounts.get("api_jwt_token")
-
-    if not api_jwt_token or api_jwt_token == "...":
-        print("⚠️ `accounts.api_jwt_token` is missing in `settings.yaml`.")
-        print(f"  ➡️ Opening the following URL to generate a token:\n  {ACCOUNTS_TOKEN_URL}")
-
-        webbrowser.open(ACCOUNTS_TOKEN_URL)
-
-        token = input("  🔑 Please paste the generated token below (or press Enter to skip):\n  > ").strip()
-
-        if token:
-            try:
-                with open(SETTINGS_FILE) as f:
-                    as_text = f.read()
-                as_text = as_text.replace("api_jwt_token: null", f"api_jwt_token: {token}")
-                as_text = as_text.replace("api_jwt_token: ...", f"api_jwt_token: {token}")
-                with open(SETTINGS_FILE, "w") as f:
-                    f.write(as_text)
-                print("  ✅ `accounts.api_jwt_token` has been updated in `settings.yaml`.")
-            except Exception as e:
-                print(f"  ❌ Error updating `settings.yaml`: {e}")
-        else:
-            print("  ⚠️ Token was not provided. Please manually update `settings.yaml` later.")
-            print(f"  ➡️ Refer to the URL: {ACCOUNTS_TOKEN_URL}")
-    else:
-        print("✅ `accounts.api_jwt_token` is specified.")
-{%- endif %}
-{%- if cookiecutter.database == "postgres" %}
-
-
-def check_database_access():
-    """
-    Ensure the database is accessible using `database_uri` from `settings.yaml`. If missing, set a default value.
-    """
-    import asyncio
-
-    from sqlalchemy import text
-    from sqlalchemy.ext.asyncio import create_async_engine
-
-    DEFAULT_DB_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres"
-
-    settings = get_settings()
-    database_uri = settings.get("database_uri")
-
-    if not database_uri or database_uri == "...":
-        print("⚠️ `database_uri` is missing in `settings.yaml`. Setting default one.")
-
-        try:
-            with open(SETTINGS_FILE) as f:
-                as_text = f.read()
-            as_text = as_text.replace("database_uri: null", f"database_uri: {DEFAULT_DB_URL}")
-            as_text = as_text.replace("database_uri: ...", f"database_uri: {DEFAULT_DB_URL}")
-            with open(SETTINGS_FILE, "w") as f:
-                f.write(as_text)
-            print("  ✅ `database_uri` has been updated in `settings.yaml`.")
-            database_uri = DEFAULT_DB_URL
-        except Exception as e:
-            print(f"  ❌ Error updating `settings.yaml`: {e}")
-            return
-
-    def get_docker_compose_command():
-        commands = ["docker compose", "docker-compose"]
-
-        for cmd in commands:
-            try:
-                subprocess.run(cmd.split(), check=True, text=True, capture_output=True)
-                return cmd
-            except subprocess.CalledProcessError:
-                # Command not available
-                continue
-        return None
-
-    def run_alembic_upgrade():
-        """
-        Run `alembic upgrade head` to apply migrations.
-        """
-        try:
-            print("⚙️ Running Alembic migrations...")
-            subprocess.run(["alembic", "upgrade", "head"], check=True, text=True, capture_output=True)
-            print("  ✅ Alembic migrations applied successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"  ❌ Error running Alembic migrations:\n  {e.stderr}")
-        except Exception as e:
-            print(f"  ❌ Unexpected error running Alembic migrations: {e}")
-
-    async def test_connection():
-        try:
-            engine = create_async_engine(database_uri)
-            async with engine.connect() as conn:
-                await conn.execute(text("SELECT 1"))
-                print("✅ Successfully connected to the database.")
-            run_alembic_upgrade()
-        except Exception:
-            print(f"⚠️ Failed to connect to the database at `{database_uri}`")
-            docker_compose = get_docker_compose_command()
-
-            if docker_compose:
-                print(f"  ➡ Attempting to start the database using `{docker_compose} up -d db` (wait for it)")
-                try:
-                    subprocess.run(
-                        [*docker_compose.split(), "up", "-d", "--wait", "db"],
-                        check=True,
-                        text=True,
-                        capture_output=True,
-                    )
-                    print(f"  ✅ `{docker_compose} up -d db` executed successfully. Retrying connection...")
-                    # Retry the database connection after starting the container
-                    engine = create_async_engine(database_uri)
-                    async with engine.connect() as conn:
-                        await conn.execute(text("SELECT 1"))
-                        print("  ✅ Successfully connected to the database after starting the container.")
-                    run_alembic_upgrade()
-                except subprocess.CalledProcessError as docker_error:
-                    print(f"  ❌ Failed to start the database using `{docker_compose} up -d db`:\n  {docker_error}")
-                except Exception as retry_error:
-                    print(f"  ❌ Retried database connection but failed again:\n  {retry_error}")
-            else:
-                print("  ❌ Docker Compose is not available, so not able to start db automatically.")
-
-    asyncio.run(test_connection())
-{%- elif cookiecutter.database == "mongo" %}
+{%- if cookiecutter.database == "mongo" %}
 
 
 def check_database_access():
@@ -219,7 +82,7 @@ def check_database_access():
     from motor.motor_asyncio import AsyncIOMotorClient
     from pymongo import timeout
 
-    DEFAULT_DB_URL = "mongodb://mongoadmin:secret@localhost:27017/db?authSource=admin"
+    DEFAULT_DB_URL = "mongodb://mongoadmin:secret@127.0.0.1:27017/db?authSource=admin"
     settings = get_settings()
     database_uri = settings.get("database_uri")
 
@@ -319,6 +182,50 @@ def check_and_generate_session_secret_key():
 
     else:
         print("✅ `session_secret_key` is specified.")
+{%- endif %}
+{%- if cookiecutter.innohassle_accounts %}
+
+
+def check_and_prompt_api_jwt_token():
+    """
+    Check if `accounts.api_jwt_token` is set in `settings.yaml`.
+    Prompt the user to set it if it is missing, allow them to input it,
+    and open the required URL in the default web browser.
+    """
+    import webbrowser
+
+    ACCOUNTS_TOKEN_URL = (
+        "https://api.innohassle.ru/accounts/v0/tokens/"
+        "generate-service-token?sub={{cookiecutter.project_slug}}-local-dev&scopes=users&only_for_me=true"
+    )
+    settings = get_settings()
+    accounts = settings.get("accounts", {})
+    api_jwt_token = accounts.get("api_jwt_token")
+
+    if not api_jwt_token or api_jwt_token == "...":
+        print("⚠️ `accounts.api_jwt_token` is missing in `settings.yaml`.")
+        print(f"  ➡️ Opening the following URL to generate a token:\n  {ACCOUNTS_TOKEN_URL}")
+
+        webbrowser.open(ACCOUNTS_TOKEN_URL)
+
+        token = input("  🔑 Please paste the generated token below (or press Enter to skip):\n  > ").strip()
+
+        if token:
+            try:
+                with open(SETTINGS_FILE) as f:
+                    as_text = f.read()
+                as_text = as_text.replace("api_jwt_token: null", f"api_jwt_token: {token}")
+                as_text = as_text.replace("api_jwt_token: ...", f"api_jwt_token: {token}")
+                with open(SETTINGS_FILE, "w") as f:
+                    f.write(as_text)
+                print("  ✅ `accounts.api_jwt_token` has been updated in `settings.yaml`.")
+            except Exception as e:
+                print(f"  ❌ Error updating `settings.yaml`: {e}")
+        else:
+            print("  ⚠️ Token was not provided. Please manually update `settings.yaml` later.")
+            print(f"  ➡️ Refer to the URL: {ACCOUNTS_TOKEN_URL}")
+    else:
+        print("✅ `accounts.api_jwt_token` is specified.")
 {%- endif %}
 
 

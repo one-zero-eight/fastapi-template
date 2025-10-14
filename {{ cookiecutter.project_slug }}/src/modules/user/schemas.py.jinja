@@ -1,6 +1,9 @@
 {% if cookiecutter.database == "mongo" %}
 from beanie import PydanticObjectId
 {% endif %}
+{%- if cookiecutter.innohassle_accounts %}
+from src.modules.inh_accounts_sdk import UserTokenData
+{%- endif %}
 from src.pydantic_base import BaseSchema
 
 
@@ -18,22 +21,24 @@ class CreateUser(BaseSchema):
 
 
 class ViewUser(BaseSchema):
-    {%- if cookiecutter.database == "postgres" %}
-    id: int
-    {%- elif cookiecutter.database == "mongo" %}
+    {%- if cookiecutter.database == "mongo" %}
     id: PydanticObjectId
     {%- endif %}
     {%- if cookiecutter.innohassle_accounts %}
     innohassle_id: str
     {%- endif %}
+    {%- if not cookiecutter.database == "mongo" and not cookiecutter.innohassle_accounts %}
+    pass
+    {%- endif %}
 
 
 class UserAuthData(BaseSchema):
-    {%- if cookiecutter.database == "postgres" %}
-    user_id: int
-    {%- elif cookiecutter.database == "mongo" %}
-    user_id: PydanticObjectId
+    {%- if cookiecutter.database == "mongo" %}
+    user_id: PydanticObjectId {%- if cookiecutter.innohassle_accounts %} | None {%- endif %}
     {%- endif %}
     {%- if cookiecutter.innohassle_accounts %}
-    innohassle_id: str
+    user_token_data: UserTokenData
+    {%- endif %}
+    {%- if not cookiecutter.database == "mongo" and not cookiecutter.innohassle_accounts %}
+    pass
     {%- endif %}

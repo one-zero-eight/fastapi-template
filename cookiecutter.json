@@ -3,7 +3,6 @@
   "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-') }}",
   "database": [
     "mongo",
-    "postgres",
     null
   ],
   "innohassle_accounts": false,
@@ -15,10 +14,7 @@
   "_extensions": [
     "local_extensions.Stencil"
   ],
-  "__include_alembic": "{{cookiecutter.database == 'postgres' }}",
   "__include_mongo": "{{cookiecutter.database == 'mongo' }}",
-  "__include_sql": "{{cookiecutter.database == 'postgres' }}",
-  "__include_tokens": "{{cookiecutter.innohassle_accounts }}",
   "__include_innohassle_accounts": "{{cookiecutter.innohassle_accounts }}",
   "__include_login_and_password": "{{cookiecutter.login_and_password }}"
 }

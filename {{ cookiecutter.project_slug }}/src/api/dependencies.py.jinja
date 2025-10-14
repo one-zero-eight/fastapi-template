@@ -7,12 +7,12 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.api.exceptions import IncorrectCredentialsException
-from src.modules.tokens.repository import TokenRepository
+from src.modules.inh_accounts_sdk import inh_accounts
 from src.modules.user.schemas import UserAuthData
 
 bearer_scheme = HTTPBearer(
     scheme_name="Bearer",
-    description="Token from [InNoHassle Accounts](https://api.innohassle.ru/accounts/v0/tokens/generate-my-token)",
+    description="Token from [InNoHassle Accounts](https://innohassle.ru/account/token)",
     bearerFormat="JWT",
     auto_error=False,  # We'll handle error manually
 )
@@ -25,7 +25,10 @@ async def get_current_user_auth(
     token = bearer and bearer.credentials
     if not token:
         raise IncorrectCredentialsException(no_credentials=True)
-    token_data = await TokenRepository.verify_user_token(token, IncorrectCredentialsException())
+    token_data = inh_accounts.decode_token(token)
+    if token_data is None:
+        raise IncorrectCredentialsException(no_credentials=False)
+    user_id = await user_repository.get_user_id_by_innohassle_id(token_data.innohassle_id)
     return token_data
 
 
@@ -52,9 +55,6 @@ async def get_current_user_auth(request: Request) -> UserAuthData:
     {%- if cookiecutter.database == "mongo" %}
 
     user_id = PydanticObjectId(uid)
-    {%- elif cookiecutter.database == "postgres" %}
-
-    user_id = str(uid)
     {%- endif %}
 
     exists = await user_repository.exists(user_id)

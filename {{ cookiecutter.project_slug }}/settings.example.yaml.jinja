@@ -1,15 +1,14 @@
+# yaml-language-server: $schema=settings.schema.yaml
 $schema: "./settings.schema.yaml"
 environment: development
 {%- if cookiecutter.database == "mongo" %}
-database_uri: null # Database URL, f.e. "mongodb://mongoadmin:secret@localhost:27017/db?authSource=admin"
-{%- elif cookiecutter.database == "postgres" %}
-database_uri: null # Database URL, f.e. "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres"
+database_uri: mongodb://mongoadmin:secret@127.0.0.1:27017/db?authSource=admin # replace 127.0.0.1 with db in Docker
 {%- endif %}
 {%- if cookiecutter.session %}
 session_secret_key: null # use `openssl rand -hex 32` to generate a random key
 {%- endif %}
 {%- if cookiecutter.innohassle_accounts %}
 accounts:
-  # get from https://api.innohassle.ru/accounts/v0/tokens/generate-service-token?sub=service-name&scopes=users&only_for_me=true
+  # get from https://api.innohassle.ru/accounts/v0/tokens/generate-service-token?sub={{cookiecutter.project_slug}}-local-dev&scopes=users&only_for_me=true
   api_jwt_token: null
 {%- endif %}

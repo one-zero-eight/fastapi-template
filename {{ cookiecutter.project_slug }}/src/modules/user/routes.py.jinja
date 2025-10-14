@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+from fastapi_derive_responses import AutoDeriveResponsesAPIRoute
 
 from src.api.dependencies import USER_AUTH
 from src.api.exceptions import IncorrectCredentialsException
@@ -8,10 +9,12 @@ from src.modules.user.schemas import ViewUser
 router = APIRouter(
     prefix="/user",
     tags=["User"],
-    responses={
-        **IncorrectCredentialsException.responses,
-    },
+    route_class=AutoDeriveResponsesAPIRoute,
 )
+_description = """
+User data, registration, login, logout.
+"""
+docs.TAGS_INFO.append({"description": _description, "name": str(router.tags[0])})
 
 
 @router.get("/me", responses={200: {"description": "Current user info"}})

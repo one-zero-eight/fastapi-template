@@ -28,7 +28,7 @@ class Accounts(SettingBaseModel):
 class Settings(SettingBaseModel):
     """Settings for the application."""
 
-    schema_: str = Field(None, alias="$schema")
+    schema_: str | None = Field(None, alias="$schema")
     environment: Environment = Environment.DEVELOPMENT
     "App environment flag"
     app_root_path: str = ""
@@ -36,19 +36,11 @@ class Settings(SettingBaseModel):
     {% if cookiecutter.database == "mongo" -%}
     database_uri: SecretStr = Field(
         examples=[
-            "mongodb://mongoadmin:secret@localhost:27017/db?authSource=admin",
+            "mongodb://mongoadmin:secret@127.0.0.1:27017/db?authSource=admin",
             "mongodb://mongoadmin:secret@db:27017/db?authSource=admin",
         ]
     )
     "MongoDB database settings"
-    {% elif cookiecutter.database == "postgres" -%}
-    database_uri: SecretStr = Field(
-        examples=[
-            "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres",
-            "postgresql+asyncpg://postgres:postgres@db:5432/postgres",
-        ],
-    )
-    "PostgreSQL database settings"
     {% endif -%}
     cors_allow_origin_regex: str = ".*"
     "Allowed origins for CORS: from which domains requests to the API are allowed. Specify as a regex: `https://.*.innohassle.ru`"
