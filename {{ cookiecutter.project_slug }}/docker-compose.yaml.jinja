@@ -13,10 +13,10 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - "./settings.yaml:/code/settings.yaml:ro" # Read-only settings file
+      - "./settings.yaml:/app/settings.yaml:ro" # Read-only settings file
   {% if cookiecutter.database == "mongo" %}
   db:
-    # See more: https://registry.hub.docker.com/_/mongo
+    # See more: https://hub.docker.com/_/mongo
     image: "mongo:8.0"
     restart: no
     ports:
@@ -32,8 +32,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-mongoadmin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-secret}
   {% endif %}
-
+{% if cookiecutter.database == "mongo" -%}
 volumes:
-  {% if cookiecutter.database == "mongo" -%}
   mongodb:
-  {%- endif %}
+{%- endif %}

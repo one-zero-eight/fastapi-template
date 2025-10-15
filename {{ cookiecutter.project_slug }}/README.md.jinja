@@ -11,7 +11,7 @@ This is the FastAPI ASGI application.
 
 ### Technologies
 
-- [Python 3.13](https://www.python.org/downloads/) & [uv](https://docs.astral.sh/uv/)
+- [Python 3.14](https://www.python.org/downloads/) & [uv](https://docs.astral.sh/uv/)
 - [FastAPI](https://fastapi.tiangolo.com/)
 {%- if cookiecutter.database == "mongo" %}
 - Database and ORM: [MongoDB](https://www.mongodb.com/) & [Beanie](https://beanie-odm.dev/)
@@ -24,7 +24,7 @@ This is the FastAPI ASGI application.
 
 ### Set up for development
 
-1. Install [uv](https://astral.sh/uv/) and [Docker](https://docs.docker.com/engine/install/)
+1. Install [uv](https://docs.astral.sh/uv/) and [Docker](https://docs.docker.com/engine/install/)
 2. Install dependencies:
    ```bash
    uv sync
@@ -65,7 +65,7 @@ We use Docker with Docker Compose plugin to run the service on servers.
 4. Change settings in the `settings.yaml` file according to your needs
    (check [settings.schema.yaml](settings.schema.yaml) for more info)
 5. Install Docker with Docker Compose
-6. Run the containers: `docker compose up --wait`
+6. Run the containers: `docker compose up --build --wait`
 7. Check the logs: `docker compose logs -f`
 
 ## FAQ

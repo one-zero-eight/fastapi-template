@@ -13,7 +13,7 @@ default_stages:
 repos:
   # Fix some errors with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.0
+    rev: v0.14.0
     hooks:
       - id: ruff
         args: [ --fix, --exit-zero ]
@@ -23,7 +23,7 @@ repos:
 
   # Lint Python files with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.0
+    rev: v0.14.0
     hooks:
       - id: ruff
         name: "ruff: linting"
@@ -42,6 +42,6 @@ repos:
       - id: generate-settings-schema
         name: generate settings.schema.yaml
         language: system
-        entry: uv run python ./scripts/generate_settings_schema.py
+        entry: uv run ./scripts/generate_settings_schema.py
         pass_filenames: false
         files: ^src/config_schema.py$

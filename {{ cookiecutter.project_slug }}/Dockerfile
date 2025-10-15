@@ -27,9 +27,6 @@ COPY --from=builder /app /app
 RUN groupadd -g 1500 uv && \
     useradd -m -u 1500 -g uv uv
 
-# Ensure /app/data directory exists and is writable
-RUN mkdir -p /app/data && chown -R uv:uv /app/data
-
 USER uv
 WORKDIR /app
 

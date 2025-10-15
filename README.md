@@ -21,7 +21,7 @@ We use it in most of our projects. See structure at [{{ cookiecutter.project_slu
    ```bash
    uvx cookiecutter gh:one-zero-eight/fastapi-template
    ```
-3. Go to generated project and install dependencies with [uv](https://astral.sh/uv/)
+3. Go to generated project and install dependencies with [uv](https://docs.astral.sh/uv/)
    ```bash
    uv sync
    ```
@@ -32,5 +32,5 @@ We use it in most of our projects. See structure at [{{ cookiecutter.project_slu
    ```
 5. Generate `settings.schema.yaml`:
    ```bash
-   uv run python scripts/generate_settings_schema.py
+   uv run scripts/generate_settings_schema.py
    ```
