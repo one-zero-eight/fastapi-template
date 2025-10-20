@@ -19,6 +19,14 @@ class CreateUser(BaseSchema):
     pass
     {%- endif %}
 
+{%- if cookiecutter.login_and_password %}
+
+
+class LoginUser(BaseSchema):
+    login: str
+    password: str
+{%- endif %}
+
 
 class ViewUser(BaseSchema):
     {%- if cookiecutter.database == "mongo" %}

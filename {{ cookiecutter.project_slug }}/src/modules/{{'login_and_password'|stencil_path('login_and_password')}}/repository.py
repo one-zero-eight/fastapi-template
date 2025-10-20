@@ -3,15 +3,17 @@ __all__ = ["LoginPasswordRepository", "login_password_repository"]
 from src.modules.user.schemas import UserAuthData
 from src.modules.user.repository import user_repository
 
-from passlib.context import CryptContext
+import bcrypt
 
 
 class LoginPasswordRepository:
-    PWD_CONTEXT = CryptContext(schemes=["bcrypt"])
-
     @classmethod
     def get_password_hash(cls, password: str) -> str:
-        return cls.PWD_CONTEXT.hash(password)
+        # Bcrypt has a maximum password length of 72 bytes
+        password_bytes = password.encode('utf-8')[:72]
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        return hashed.decode('utf-8')
 
     async def verify_credentials(self, login: str, password: str) -> UserAuthData | None:
         user = await user_repository.read_id_and_password_hash(login)
@@ -20,7 +22,9 @@ class LoginPasswordRepository:
             return None
         user_id, password_hash = user
 
-        password_verified = self.PWD_CONTEXT.verify(password, password_hash)
+        # Apply same truncation for verification
+        password_bytes = password.encode('utf-8')[:72]
+        password_verified = bcrypt.checkpw(password_bytes, password_hash.encode('utf-8'))
         if not password_verified:
             return None
 
