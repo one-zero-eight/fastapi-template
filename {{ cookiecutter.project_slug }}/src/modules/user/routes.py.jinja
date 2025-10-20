@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi_derive_responses import AutoDeriveResponsesAPIRoute
 
+from src.api import docs
 from src.api.dependencies import USER_AUTH
 from src.api.exceptions import IncorrectCredentialsException
 from src.modules.user.repository import user_repository
