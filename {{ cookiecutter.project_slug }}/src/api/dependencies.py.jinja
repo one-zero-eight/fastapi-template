@@ -39,7 +39,7 @@ __all__ = ["USER_AUTH", "get_current_user_auth"]
 from typing import Annotated
 
 from beanie import PydanticObjectId
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from starlette.requests import Request
 
 from src.api.exceptions import IncorrectCredentialsException
@@ -61,10 +61,6 @@ async def get_current_user_auth(request: Request) -> UserAuthData:
     if not exists:
         request.session.clear()
         raise IncorrectCredentialsException()
-
-    banned = await user_repository.is_banned(user_id)
-    if banned:
-        raise HTTPException(status_code=403, detail="You are banned 🥹")
 
     return UserAuthData(user_id=user_id)
 
