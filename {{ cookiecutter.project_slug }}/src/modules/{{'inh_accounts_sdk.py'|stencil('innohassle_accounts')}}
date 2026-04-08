@@ -1,12 +1,33 @@
+# This file should be synced with:
+# https://github.com/one-zero-eight/accounts/blob/main/inh_accounts_sdk.py
+
 import datetime
 import time
 
 import httpx
 from authlib.jose import JsonWebKey, JWTClaims, KeySet, jwt
 from authlib.jose.errors import JoseError
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.config import settings
+
+
+class TelegramInfo(BaseModel):
+    id: int
+    first_name: str
+    last_name: str | None = None
+    username: str | None = None
+    photo_url: str | None = None
+    updated_at: datetime.datetime
+
+
+class InnopolisInfo(BaseModel):
+    email: str
+    name: str | None = None
+    is_student: bool = False
+    is_staff: bool = False
+    is_college: bool = False
+    updated_at: datetime.datetime
 
 
 class UserInfoFromSSO(BaseModel):
@@ -16,6 +37,7 @@ class UserInfoFromSSO(BaseModel):
     issued_at: datetime.datetime | None = None
     is_student: bool = False
     is_staff: bool = False
+    is_college: bool = False
     group: str | None = None
 
 
@@ -30,14 +52,26 @@ class TelegramWidgetData(BaseModel):
 
 class UserSchema(BaseModel):
     id: str
-    telegram: TelegramWidgetData | None
-    innopolis_sso: UserInfoFromSSO | None
+    innopolis_info: InnopolisInfo
+    telegram_info: TelegramInfo | None = None
+    innohassle_admin: bool = False
+
+    innopolis_sso: UserInfoFromSSO | None = Field(
+        None,
+        deprecated=True,
+        description="Deprecated field, use `innopolis_info` instead, dont trust data from `innopolis_sso`",
+    )
+    telegram: TelegramWidgetData | None = Field(
+        None,
+        deprecated=True,
+        description="Deprecated field, use `telegram_info` instead",
+    )
 
 
 class UserTokenData(BaseModel):
     innohassle_id: str
     "InNoHassle Accounts ID"
-    email: str | None = None
+    email: str
     "Innopolis email (@innopolis.university or @innopolis.ru)"
     telegram_id: int | None = None
     "User's Telegram ID connected to InNoHassle Accounts"
@@ -78,6 +112,7 @@ class InNoHassleAccounts:
             innohassle_id: str = payload["uid"]
             email: str | None = payload.get("email")
             telegram_id: int | None = payload.get("telegram_id")
+            assert email is not None, "Token always have email"
             return UserTokenData(
                 innohassle_id=innohassle_id,
                 email=email,
@@ -131,7 +166,10 @@ class InNoHassleAccounts:
             return None
 
 
-inh_accounts: InNoHassleAccounts = InNoHassleAccounts(
-    api_url=settings.accounts.api_url,
-    api_jwt_token=settings.accounts.api_jwt_token.get_secret_value(),
-)
+if settings.accounts:
+    inh_accounts: InNoHassleAccounts = InNoHassleAccounts(
+        api_url=settings.accounts.api_url,
+        api_jwt_token=settings.accounts.api_jwt_token.get_secret_value(),
+    )
+else:
+    raise ImportError("InNoHassle Accounts is not configured in ./settings.yaml")
