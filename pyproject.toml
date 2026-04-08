@@ -12,8 +12,8 @@ dependencies = [
     "colorlog>=6.8.2",
     "cryptography>=44.0.0",
     "fastapi[standard]>=0.115.6",
-    "fastapi-swagger>=0.2.3",
-    "fastapi-derive-responses>=0.1.4",
+    "fastapi-swagger>=0.4.46",
+    "fastapi-derive-responses>=0.1.7",
     "gunicorn>=23.0.0",
     "httpx>=0.28.1",
     "pydantic>=2.10.5",
@@ -31,13 +31,13 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit>=4.0.1",
     "pytest>=8.4.0",
     "pytest-asyncio>=1.1.0",
     "pytest-cov>=6.2.1",
     "astor>=0.8.1",
     "pygments>=2.18.0",
     "simple-term-menu>=1.6.6",
+    "prek>=0.3.8",
 ]
 
 [tool.ruff]

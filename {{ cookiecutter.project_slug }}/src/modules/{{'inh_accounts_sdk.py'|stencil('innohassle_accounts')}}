@@ -29,6 +29,7 @@ class TelegramWidgetData(BaseModel):
 
 
 class UserSchema(BaseModel):
+    id: str
     telegram: TelegramWidgetData | None
     innopolis_sso: UserInfoFromSSO | None
 
