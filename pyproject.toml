@@ -20,7 +20,7 @@ dependencies = [
     "ruff>=0.15.12",
     "uvicorn>=0.46.0",
     # mongo = [
-    "beanie>=1.30.0,<2.0.0",
+    "beanie>=2.1.0,<3.0.0",
     # ]
     # passwords = [
     "bcrypt>=5.0.0",
