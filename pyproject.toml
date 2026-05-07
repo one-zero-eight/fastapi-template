@@ -10,7 +10,7 @@ requires-python = ">=3.13"
 dependencies = [
     "joserfc>=1.6.5",
     "colorlog>=6.8.2",
-    "cryptography>=44.0.0",
+    "cryptography>=46.0.7",
     "fastapi[standard]>=0.115.6",
     "fastapi-swagger>=0.4.46",
     "fastapi-derive-responses>=0.1.7",
