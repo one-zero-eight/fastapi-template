@@ -2,12 +2,15 @@
 # https://github.com/one-zero-eight/accounts/blob/main/inh_accounts_sdk.py
 
 import datetime
-import time
+import logging
+from typing import Any
 
 import httpx
-from authlib.jose import JsonWebKey, JWTClaims, KeySet, jwt
-from authlib.jose.errors import JoseError
-from pydantic import BaseModel, Field
+from joserfc import jwt
+from joserfc.errors import JoseError
+from joserfc.jwk import RSAKey
+from joserfc.jwt import JWTClaimsRegistry
+from pydantic import BaseModel
 
 from src.config import settings
 
@@ -30,42 +33,11 @@ class InnopolisInfo(BaseModel):
     updated_at: datetime.datetime
 
 
-class UserInfoFromSSO(BaseModel):
-    email: str
-    name: str | None = None
-
-    issued_at: datetime.datetime | None = None
-    is_student: bool = False
-    is_staff: bool = False
-    is_college: bool = False
-    group: str | None = None
-
-
-class TelegramWidgetData(BaseModel):
-    id: int
-    auth_date: int
-    first_name: str
-    last_name: str | None = None
-    username: str | None = None
-    photo_url: str | None = None
-
-
 class UserSchema(BaseModel):
     id: str
     innopolis_info: InnopolisInfo
     telegram_info: TelegramInfo | None = None
     innohassle_admin: bool = False
-
-    innopolis_sso: UserInfoFromSSO | None = Field(
-        None,
-        deprecated=True,
-        description="Deprecated field, use `innopolis_info` instead, dont trust data from `innopolis_sso`",
-    )
-    telegram: TelegramWidgetData | None = Field(
-        None,
-        deprecated=True,
-        description="Deprecated field, use `telegram_info` instead",
-    )
 
 
 class UserTokenData(BaseModel):
@@ -79,28 +51,38 @@ class UserTokenData(BaseModel):
 
 class InNoHassleAccounts:
     api_url: str
-    api_jwt_token: str
+    api_jwt_token: str | None
     PUBLIC_KID = "public"
-    key_set: KeySet
+    key_set: dict[str, Any] | None = None
 
-    def __init__(self, api_url: str, api_jwt_token: str):
+    def __init__(
+        self,
+        api_url: str = "https://api.innohassle.ru/accounts/v0",
+        api_jwt_token: str | None = None,
+    ):
         self.api_url = api_url
         self.api_jwt_token = api_jwt_token
+        if self.api_jwt_token is None:
+            logging.warning(
+                "API JWT token is not set, you will not be able to call service endpoints that require authorization"
+            )
 
     async def update_key_set(self):
         self.key_set = await self.get_key_set()
 
-    def get_public_key(self) -> JsonWebKey:
+    def get_public_key(self) -> RSAKey:
         if self.key_set is None:
             raise RuntimeError("Key set should be initialized by `update_key_set`")
-        return self.key_set.find_by_kid(self.PUBLIC_KID)
+        key_data = next((key for key in self.key_set.get("keys", []) if key.get("kid") == self.PUBLIC_KID), None)
+        if key_data is None:
+            raise RuntimeError(f"Public key with kid={self.PUBLIC_KID!r} is missing in JWKS")
+        return RSAKey.import_key(key_data)
 
-    async def get_key_set(self) -> KeySet:
+    async def get_key_set(self) -> dict[str, Any]:
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{self.api_url}/.well-known/jwks.json")
             response.raise_for_status()
-            jwks_json = response.json()
-            return JsonWebKey.import_key_set(jwks_json)
+            return response.json()
 
     def decode_token(self, token: str) -> UserTokenData | None:
         """
@@ -109,32 +91,34 @@ class InNoHassleAccounts:
         """
         try:
             payload = self._get_jwt_claims(token)
-            innohassle_id: str = payload["uid"]
+            innohassle_id: str | None = payload.get("uid")
             email: str | None = payload.get("email")
             telegram_id: int | None = payload.get("telegram_id")
-            assert email is not None, "Token always have email"
+            if innohassle_id is None or email is None:
+                raise JoseError("Missing required claims: uid/email")
             return UserTokenData(
                 innohassle_id=innohassle_id,
                 email=email,
                 telegram_id=telegram_id,
             )
         except JoseError:
-            # logger.warning("Invalid token", exc_info=True)
+            logging.warning("Invalid token", exc_info=True)
             return None
 
     def get_authorized_client(self) -> httpx.AsyncClient:
+        if not self.api_jwt_token:
+            raise ValueError("API JWT token is not set")
         return httpx.AsyncClient(
             headers={"Authorization": f"Bearer {self.api_jwt_token}"},
             base_url=self.api_url,
         )
 
-    def _get_jwt_claims(self, token: str) -> JWTClaims:
-        now = time.time()
+    def _get_jwt_claims(self, token: str) -> dict[str, Any]:
         pub_key = self.get_public_key()
         payload = jwt.decode(token, pub_key)
-        payload.validate_exp(now, leeway=0)
-        payload.validate_iat(now, leeway=0)
-        return payload
+        claims = payload.claims
+        JWTClaimsRegistry().validate(claims)
+        return claims
 
     async def get_user(
         self,
