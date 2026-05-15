@@ -40,6 +40,9 @@ dev = [
     "prek>=0.3.13",
 ]
 
+[tool.uv]
+constraint-dependencies = ["urllib3>=2.7.0"]
+
 [tool.ruff]
 line-length = 120
 lint.extend-select = ["I", "UP", "PL"]

@@ -43,9 +43,5 @@ class UserRepository:
     async def exists(self, user_id: PydanticObjectId) -> bool:
         return bool(await User.find(User.id == user_id, limit=1).count())
 
-    async def is_banned(self, user_id: str | PydanticObjectId) -> bool:
-        return False
-
-
 user_repository: UserRepository = UserRepository()
 {%- endif %}
